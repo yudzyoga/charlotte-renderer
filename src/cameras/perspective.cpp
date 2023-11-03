@@ -19,6 +19,7 @@ public:
         // hints:
         // * precompute any expensive operations here (most importantly trigonometric functions)
         // * use m_resolution to find the aspect ratio of the image
+
     }
 
     CameraSample sample(const Point2 &normalized, Sampler &rng) const override {
