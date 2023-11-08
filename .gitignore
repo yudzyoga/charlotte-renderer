@@ -8,3 +8,6 @@ __pycache__
 /scenes
 
 .DS_Store
+
+./articuno.project
+./articuno.workspace
