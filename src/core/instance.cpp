@@ -25,18 +25,20 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
 
     const float previousT = its.t;
     Ray localRay;
-    NOT_IMPLEMENTED
+    // NOT_IMPLEMENTED
 
     // hints:
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
+    localRay = m_transform->apply(worldRay).normalized();
 
     const bool wasIntersected = m_shape->intersect(localRay, its, rng);
     if (wasIntersected) {
         // hint: how does its.t need to change?
-
+        its.t = 1.f;
         its.instance = this;
         transformFrame(its);
+        return true;
     } else {
         its.t = previousT;
     }
