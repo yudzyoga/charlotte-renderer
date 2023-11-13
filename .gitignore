@@ -9,5 +9,5 @@ __pycache__
 
 .DS_Store
 
-./articuno.project
-./articuno.workspace
+articuno.project
+articuno.workspace

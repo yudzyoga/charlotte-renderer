@@ -25,7 +25,7 @@ public:
         } else {
             // if yes, then proceed to use the saved "normal" from "sphere.cpp" code
             Intersection its = m_scene->intersect(ray, rng);
-            d = its.wo;
+            d = its.frame.normal;
         }
 
         if (m_remap) {

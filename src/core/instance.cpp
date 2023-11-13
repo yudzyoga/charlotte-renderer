@@ -11,6 +11,18 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     // * if m_flipNormal is true, flip the direction of the bitangent (which in effect flips the normal)
     // * make sure that the frame is orthonormal (you are free to change the bitangent for this, but keep
     //   the direction of the transformed tangent the same)
+
+    surf.position = m_transform->apply(surf.position);
+    // surf.position = surf.frame.toWorld(surf.position);
+    
+    // auto hit_point = surf.position;
+    // auto frame = surf.frame;
+    
+    if (m_flipNormal) {
+        // surf.position;
+        // surf.frame.bitangent = -surf.frame.bitangent;
+        // surf.frame.normal = -surf.frame.normal;
+    }
 }
 
 bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) const {
@@ -25,17 +37,28 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
 
     const float previousT = its.t;
     Ray localRay;
-    // NOT_IMPLEMENTED
 
     // hints:
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
-    localRay = m_transform->apply(worldRay).normalized();
+    // map the ray from world to local ray, then normalize
+    localRay = m_transform->inverse(worldRay).normalized();
 
     const bool wasIntersected = m_shape->intersect(localRay, its, rng);
     if (wasIntersected) {
         // hint: how does its.t need to change?
-        its.t = 1.f;
+        // if intersected, it means that all the initial intersected points (from sphere.cpp)
+        // will be scaled down to some scale. without re-calculating the ray intersection, 
+        // all the points can be re-mapped to its inverse thus produces the desired results.
+        its.position = m_transform->inverse(its.position);
+        Vector new_direction = Vector(its.position - m_shape->getCentroid()).normalized();
+
+        // its.position = new_position;
+        its.t = (its.position - localRay.origin).length();
+        // its.wo = Vector(0); // this makes sphere_scaled correct hmmm ...
+        // its.frame.normal = new_direction;
+
+        // its.t = (new_position - localRay.origin).length();
         its.instance = this;
         transformFrame(its);
         return true;

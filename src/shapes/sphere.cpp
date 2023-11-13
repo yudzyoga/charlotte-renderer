@@ -1,25 +1,8 @@
 #include <lightwave.hpp>
 
 namespace lightwave {
+
 class Sphere : public Shape {
-
-    // inline void populate(SurfaceEvent &surf, const Point &position) const {
-    //     surf.position = position;
-        
-    //     // map the position from [-1,-1,0]..[+1,+1,0] to [0,0]..[1,1] by discarding the z component and rescaling
-    //     surf.uv.x() = (position.x() + 1) / 2;
-    //     surf.uv.y() = (position.y() + 1) / 2;
-
-    //     // the tangent always points in positive x direction
-    //     surf.frame.tangent = Vector(1, 0, 0);
-    //     // the bitagent always points in positive y direction
-    //     surf.frame.bitangent = Vector(0, 1, 0);
-    //     // and accordingly, the normal always points in the positive z direction
-    //     surf.frame.normal = Vector(0, 0, 1);
-
-    //     // since we sample the area uniformly, the pdf is given by 1/surfaceArea
-    //     surf.pdf = 1.0f / 4;
-    // }
 
 public:
     Point center = Point(0);
@@ -64,11 +47,15 @@ public:
             return false;
 
         // calculate normal, and store variables
-        normal = (ray(distance) - center).normalized();
+        Point position = ray(distance);
+        normal = (position - center).normalized();
         its.t = distance;
-        its.wo = normal;
+
         its.pdf = 0.f;
-        // populate(its, ray(distance));
+        its.position = position;
+        its.uv.x() = (position.x() + 1.0) / 2;
+        its.uv.y() = (position.y() + 1.0) / 2;
+        its.frame.normal = normal;
         return true;
     }
     Bounds getBoundingBox() const override {
