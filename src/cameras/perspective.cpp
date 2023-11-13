@@ -16,30 +16,6 @@ public:
     : Camera(properties) {        
         // NOT_IMPLEMENTED
 
-        // hints:
-        // * precompute any expensive operations here (most importantly trigonometric functions)
-        // * use m_resolution to find the aspect ratio of the image
-
-        // get the resolution in x and y, and axisName to map the FOV in X and Y
-        // res_x = (float)m_resolution.x();
-        // res_y = (float)m_resolution.y();
-        
-        // // define aspect ration and fov in x and y
-        // if (properties.get<std::string>("fovAxis") == "x") {
-        //     aspect_ratio = res_x / res_y;
-        //     fov_x = Deg2Rad * properties.get<float>("fov");
-        //     fov_y = 2 * atan(tan(fov_x / 2) / aspect_ratio);
-        // }
-        // else {
-        //     aspect_ratio = res_y / res_x;
-        //     fov_y = Deg2Rad * properties.get<float>("fov");
-        //     fov_x = 2 * atan(tan(fov_y / 2) / aspect_ratio);
-        // }
-
-        // // calculate focal length in x and y
-        // focal_length_x = (0.5f * res_x) / (tan(fov_x * 0.5f));
-        // focal_length_y = (0.5f * res_y) / (tan(fov_y * 0.5f));
-
         // define aspect ration and fov in x and y
         float fov = Deg2Rad * properties.get<float>("fov");
         if (properties.get<std::string>("fovAxis") == "x") {
