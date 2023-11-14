@@ -47,8 +47,8 @@ public:
 
         // calculate normal, and store variables
         its.pdf = 0.f;
-        its.wo = -ray.direction;
         its.t = distance;
+        its.wo = -ray.direction;
         its.position = ray(distance);
         its.frame.normal = (its.position - center).normalized();
         return true;

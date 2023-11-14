@@ -14,9 +14,10 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     
     // bring the center shape to the world, and re-calculate the normal
     Point pos_centroid_world = m_transform->apply(surf.instance->m_shape->getCentroid());
-    // surf.frame.normal = (surf.position - pos_centroid_world).normalized();        
+    surf.frame.normal = (surf.position - pos_centroid_world).normalized();        
     // surf.frame.tangent = Vector(-surf.position.x(),0,surf.position.z() + surf.frame.normal.x()*surf.position.x()/surf.frame.normal.z()).normalized();
     // surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent).normalized();
+
 
     if (m_flipNormal) {
         surf.frame.bitangent = -surf.frame.bitangent;
@@ -41,23 +42,27 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
 
-    // change its into local data
+    // Transform the ray from world to local
     localRay = m_transform->inverse(worldRay).normalized(); // to local
-    its.position = m_transform->inverse(its.position); // to local
-    its.t = (its.position - localRay.origin).length(); // local distance?
 
-    //TRY 
-    // its.t = (m_transform->inverse(its.position) - localRay.origin).length(); // change from global to local pos
-    // its.t = (its.position - localRay.origin).length(); // change from global to local pos
-    // its.position = localRay(its.t);
+    // This part acquired by few iterations, the idea was
+    // the distance (its.t) will be the same regardless the local or global positioning
+    // because it basically the distance between the ray origin to its intersection point
+    // in here we assume that the intersection still in global coordinates, thus, 
+    // getting the world position
+    its.position = worldRay(its.t);
+    // then transform it back to the local coordinate
+    its.position = m_transform->inverse(its.position);
+    // and acquire updated distance in the local coordinate
+    its.t = (its.position - localRay.origin).length(); 
 
     const bool wasIntersected = m_shape->intersect(localRay, its, rng);
     if (wasIntersected) {
         // hint: how does its.t need to change?
         // if intersected, it means that all the initial intersected points (from sphere.cpp)
         // will be scaled down to some scale. without re-calculating the ray intersection, 
-        // all the points can be re-mapped to its inverse thus produces the desired results.
-
+        // all the points can be re-mapped to its inverse. 
+        // the distance (its.t) can also acquired from this calculation
         its.position = m_transform->apply(its.position); // change to world
         its.t = (its.position - worldRay.origin).length(); // world distance
 
