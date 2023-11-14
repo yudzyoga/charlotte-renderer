@@ -12,8 +12,7 @@ public:
     }
 
     bool intersect(const Ray &ray, Intersection &its, Sampler &rng) const override {
-        float distance = its.t;
-        Vector normal = ray.direction;
+        auto distance = its.t;
 
         // begin sphere calculation || O + t*D - C ||^2 = r^2
         Vector ray_origin_to_sphere_center = center - ray.origin; 
@@ -26,7 +25,6 @@ public:
 
         // if D<0, there are no interaction
         if (D<0){
-            its.wo = normal;
             return false;
         }
         
@@ -43,26 +41,23 @@ public:
             distance = t2;
         }
 
-        if (distance < Epsilon || distance > its.t)
+        if (distance < Epsilon || distance > its.t){
             return false;
+        }
 
         // calculate normal, and store variables
-        Point position = ray(distance);
-        normal = (position - center).normalized();
-        its.t = distance;
-
         its.pdf = 0.f;
-        its.position = position;
-        its.uv.x() = (position.x() + 1.0) / 2;
-        its.uv.y() = (position.y() + 1.0) / 2;
-        its.frame.normal = normal;
+        its.wo = -ray.direction;
+        its.t = distance;
+        its.position = ray(distance);
+        its.frame.normal = (its.position - center).normalized();
         return true;
     }
     Bounds getBoundingBox() const override {
         return Bounds(center - Vector(radius), center + Vector(radius));
     }
     Point getCentroid() const override {
-        return center;
+        return Point(0);
     }
     AreaSample sampleArea(Sampler &rng) const override {
         NOT_IMPLEMENTED
