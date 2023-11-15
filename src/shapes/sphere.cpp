@@ -50,6 +50,7 @@ public:
         its.t = distance;
         its.position = ray(distance);
         its.frame.normal = (its.position - center).normalized();
+        its.frame = Frame(its.frame.normal);
         return true;
     }
     Bounds getBoundingBox() const override {
