@@ -65,12 +65,12 @@ protected:
         Vector3i triangle;
 
         D = ray.direction;
-        primitiveIndex = -1;
+        // primitiveIndex = ;
 
         // traverse all triangle, find the nearest intersection
         // store its t and relative intersection information (values of u,v)
-        for( int i = 0 ; i < numberOfPrimitives() ; i++){
-            triangle = m_triangles[i];
+        // for( int i = 0 ; i < numberOfPrimitives() ; i++){
+            triangle = m_triangles[primitiveIndex];
 
             V0 = m_vertices[triangle.x()].position;
             V1 = m_vertices[triangle.y()].position;
@@ -102,7 +102,7 @@ protected:
             its_u = u*inv_det;
             its_v = v*inv_det;
             its.t = t;
-        }
+        // }
 
         if(primitiveIndex==-1) return false;
         else{
