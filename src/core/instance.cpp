@@ -12,16 +12,19 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     // * make sure that the frame is orthonormal (you are free to change the bitangent for this, but keep
     //   the direction of the transformed tangent the same)
     
-    // bring the center shape to the world, and re-calculate the normal
-    Point pos_centroid_world = m_transform->apply(surf.instance->m_shape->getCentroid());
-    surf.frame.normal = (surf.position - pos_centroid_world).normalized();        
-    // surf.frame.tangent = Vector(-surf.position.x(),0,surf.position.z() + surf.frame.normal.x()*surf.position.x()/surf.frame.normal.z()).normalized();
-    // surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent).normalized();
-
+    // To transform the normal, initially transform the bitangent and tangent 
+    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent).normalized();
+    surf.frame.tangent = m_transform->apply(surf.frame.tangent).normalized();
+    // then use the cross product to get the new normal. the direction of the tangent and bitangent
+    // does not necessarily perpendicular, even though the cross product result would still produces
+    // the perpendicular vector i.e, normal
+    surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent).normalized();
+    // redefine bitangent using cross product between normal and tangent.
+    surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent).normalized();
 
     if (m_flipNormal) {
-        surf.frame.bitangent = -surf.frame.bitangent;
-        surf.frame.normal = -surf.frame.normal;
+        surf.frame.bitangent = -surf.frame.bitangent.normalized();
+        surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent);
     }
 }
 
