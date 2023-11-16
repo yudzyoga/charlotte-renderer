@@ -56,104 +56,83 @@ protected:
         //plz refer to the equation above
         Vector edge1, edge2, T, pvec, qvec, D;
         float det, t, u, v, inv_det;
-        Point V1, V2, V0;
+        Point V0;
 
-        // store the intersection information for the nearest hit
-        float its_u, its_v;
 
         // a shorthand for m_triangles[i]
         Vector3i triangle;
 
         D = ray.direction;
-        // primitiveIndex = ;
+        
+        triangle = m_triangles[primitiveIndex];
+        
+        V0 = m_vertices[triangle[0]].position;          
+        edge1 = m_vertices[triangle[1]].position - V0;
+        edge2 = m_vertices[triangle[2]].position - V0;  
+        pvec = D.cross(edge2);
+        det = pvec.dot(edge1);
 
-        // traverse all triangle, find the nearest intersection
-        // store its t and relative intersection information (values of u,v)
-        // for( int i = 0 ; i < numberOfPrimitives() ; i++){
-            triangle = m_triangles[primitiveIndex];
+        // if determinant is too small() almost parallel with the triangle, ignore this hit
+        // allow double-side intersection
+        if (det<Epsilon && det>-Epsilon) return false;
+        inv_det = 1.0 / det;
 
-            V0 = m_vertices[triangle.x()].position;
-            V1 = m_vertices[triangle.y()].position;
-            V2 = m_vertices[triangle.z()].position;
+        T = ray.origin - V0;              
+        u = pvec.dot(T)*inv_det;
 
-            edge1 = V1 - V0;
-            edge2 = V2 - V0;
-            pvec = D.cross(edge2);
-            det = pvec.dot(edge1);
+        if (u < 0.0 || u > 1.0) return false; 
 
-            
-            // if determinant is too small() almost parallel with the triangle, ignore this hit
-            if (det < Epsilon && det > -Epsilon) continue; // allow double-side intersection
-            
-            
-            T = ray.origin - V0;              
-            u = pvec.dot(T);
-            if (u < 0.0 || u > det) continue; 
+        qvec = T.cross(edge1);
+        v = qvec.dot(D)*inv_det;
+        
+        if (v < 0.0 || v+u > 1.0) return false; 
 
-            qvec = T.cross(edge1);
-            v = qvec.dot(D);
-            if (v < 0.0 || v+u > det) continue; 
+        
+        t = qvec.dot(edge2)*inv_det ;
 
-            inv_det = 1.0 / det;
-            t = qvec.dot(edge2)*inv_det ;
-            if (t < Epsilon || t > its.t) continue; 
-
-            primitiveIndex = i;
-            its_u = u*inv_det;
-            its_v = v*inv_det;
+        if (t >= Epsilon && t <its.t ) {
+            //update its.t/uv/frame/position/pdf
             its.t = t;
-        // }
-
-        if(primitiveIndex==-1) return false;
-        else{
-            triangle = m_triangles[primitiveIndex];
-            V0 = m_vertices[triangle.x()].position;          
-            edge1 = m_vertices[triangle.y()].position - V0;
-            edge2 = m_vertices[triangle.z()].position - V0;  
-
-            Point position = ray(its.t);
+            
+            Point position = m_vertices[triangle[0]].interpolate(Vector2(u,v), m_vertices[triangle[0]], m_vertices[triangle[1]], m_vertices[triangle[2]]).position;
             its.uv.x() = (position.x() + 1.0) / 2;
             its.uv.y() = (position.y() + 1.0) / 2;
             its.position = position;
 
             Vector normal;
             normal = edge1.cross(edge2);
-            its.pdf = 1.0/abs(normal.length());            
+            its.pdf = 1.0/abs(normal.length()); //area is the length of normal vector  
+            //smooth normal 
             if(m_smoothNormals){
-                normal = m_vertices[triangle.x()].interpolate(Vector2(its_u,its_v), m_vertices[triangle.x()], m_vertices[triangle.y()], m_vertices[triangle.z()]).normal;
+                normal = m_vertices[triangle[0]].interpolate(Vector2(u,v), m_vertices[triangle[0]], m_vertices[triangle[1]], m_vertices[triangle[2]]).normal;
             }
-            // its.wo = normal.normalized();
+
             its.frame.normal = normal.normalized();
-            // set tangent parallel with V0V1
-            its.frame.tangent = (edge1 + (position- V0)).normalized();
-            its.frame.bitangent = normal.cross(its.frame.tangent).normalized();
+            its.frame = Frame(its.frame.normal);
+
             return true;
+            
         }
+        else return false;
 
     }
 
     Bounds getBoundingBox(int primitiveIndex) const override {
-        //suppose this shape is hitted???? or we will have to check if intersect ==true
         Vector3i triangle;
-        Point m_min, m_max;
+        Bounds bbox;
 
-        // suppose primitiveIndex is updated, this function is invocked only when known it's hitted
-        // create bbox for the hitted triangle
         triangle = m_triangles[primitiveIndex];
-        m_min = elementwiseMin(m_vertices[triangle.x()].position , m_vertices[triangle.y()].position);
-        m_min = elementwiseMin(m_min,m_vertices[triangle.z()].position);
-        m_max = elementwiseMax(m_vertices[triangle.x()].position , m_vertices[triangle.y()].position);
-        m_max = elementwiseMax(m_max , m_vertices[triangle.z()].position);
 
-        return Bounds(m_min,m_max);
+        bbox.extend(m_vertices[triangle[0]].position);
+        bbox.extend(m_vertices[triangle[1]].position);
+        bbox.extend(m_vertices[triangle[2]].position);
+        return bbox;
     }
 
     Point getCentroid(int primitiveIndex) const override {
-        //suppose this shape is hitted???? or we will have to check if intersect ==true
         Vector3i triangle;
 
-        // suppose primitiveIndex is updated, this function is invocked only when known it's hitted
-        // choose a arbituary point in the hitted triangle 
+        // choose an arbituary point in the hitted triangle 
         triangle = m_triangles[primitiveIndex];
         return m_vertices[triangle.x()].interpolate(Vector2(0.25,0.5), m_vertices[triangle.x()], m_vertices[triangle.y()], m_vertices[triangle.z()]).position;
     }
