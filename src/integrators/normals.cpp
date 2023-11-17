@@ -17,16 +17,15 @@ public:
      */
     Color Li(const Ray &ray, Sampler &rng) override {
         // take the direction of the ray
-        Vector d = ray.direction;
+        Vector d;
 
         // check whether the ray has an intersection with objects
-        if (m_scene->intersect(ray, rng) == false) {
-            d = Vector(0.f);
-        } else {
-            // if yes, then proceed to use the saved "normal" from "sphere.cpp" code
+        if (m_scene->intersect(ray,INFINITY,rng)) {
             Intersection its = m_scene->intersect(ray, rng);
-            d = its.frame.normal;
-        }
+            d = its.frame.normal;  
+        } 
+        else d = Vector(0.f);   
+            
 
         if (m_remap) {
             // remap the direction from [-1,+1]^3 to [0,+1]^3 so that colors channels are never negative

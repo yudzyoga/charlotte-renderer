@@ -12,7 +12,7 @@ public:
     }
 
     bool intersect(const Ray &ray, Intersection &its, Sampler &rng) const override {
-        auto distance = its.t;
+        
 
         // begin sphere calculation || O + t*D - C ||^2 = r^2
         Vector ray_origin_to_sphere_center = center - ray.origin; 
@@ -35,6 +35,7 @@ public:
 
         // if t1>=0
         // t1 obviously less than t2 due to the substraction
+        auto distance = its.t;
         if (t1 >= 0){
             distance = t1;
         } else if (t2 >= 0){
@@ -51,6 +52,8 @@ public:
         its.position = ray(distance);
         its.frame.normal = (its.position - center).normalized();
         its.frame = Frame(its.frame.normal);
+        its.uv.x() = (its.position.x() + 1.0) / 2;
+        its.uv.y() = (its.position.y() + 1.0) / 2;
         return true;
     }
     Bounds getBoundingBox() const override {

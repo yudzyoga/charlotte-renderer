@@ -12,20 +12,21 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     // * make sure that the frame is orthonormal (you are free to change the bitangent for this, but keep
     //   the direction of the transformed tangent the same)
     
+    // basic idea: transformed tangent plane is still tangent, tranform (bi)tangent (two inparallel lines define a plane)
     // To transform the normal, initially transform the bitangent and tangent 
-    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent).normalized();
+    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent);
     surf.frame.tangent = m_transform->apply(surf.frame.tangent).normalized();
     // then use the cross product to get the new normal. the direction of the tangent and bitangent
     // does not necessarily perpendicular, even though the cross product result would still produces
     // the perpendicular vector i.e, normal
-    surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent).normalized();
-    // redefine bitangent using cross product between normal and tangent.
-    surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent).normalized();
+    
 
-    if (m_flipNormal) {
-        surf.frame.bitangent = -surf.frame.bitangent.normalized();
-        surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent);
-    }
+    if (m_flipNormal) 
+        surf.frame.normal = surf.frame.bitangent.cross(surf.frame.tangent).normalized();
+    else 
+        surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent).normalized();
+    // redefine bitangent to make sure frame is consists of three orthonormal basis
+    surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent).normalized();
 }
 
 bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) const {
@@ -34,49 +35,50 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         Ray localRay = worldRay;
         if (m_shape->intersect(localRay, its, rng)) {
             its.instance = this;
+            return true;
         }
         return false;
     }
-
-    const float previousT = its.t;
-    Ray localRay;
 
     // hints:
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
 
     // Transform the ray from world to local
-    localRay = m_transform->inverse(worldRay).normalized(); // to local
+    Ray localRay = m_transform->inverse(worldRay); // to local
 
     // This part acquired by few iterations, the idea was
     // the distance (its.t) will be the same regardless the local or global positioning
     // because it basically the distance between the ray origin to its intersection point
     // in here we assume that the intersection still in global coordinates, thus, 
     // getting the world position
-    its.position = worldRay(its.t);
+    // its.position = worldRay(its.t);
     // then transform it back to the local coordinate
-    its.position = m_transform->inverse(its.position);
+    Intersection newIts = its;
+    newIts.position = m_transform->inverse(newIts.position);
     // and acquire updated distance in the local coordinate
-    its.t = (its.position - localRay.origin).length(); 
+    newIts.t = (newIts.position - localRay.origin).length(); 
 
-    const bool wasIntersected = m_shape->intersect(localRay, its, rng);
-    if (wasIntersected) {
+    if (m_shape->intersect(localRay, newIts, rng)) {
         // hint: how does its.t need to change?
         // if intersected, it means that all the initial intersected points (from sphere.cpp)
         // will be scaled down to some scale. without re-calculating the ray intersection, 
         // all the points can be re-mapped to its inverse. 
         // the distance (its.t) can also acquired from this calculation
-        its.position = m_transform->apply(its.position); // change to world
-        its.t = (its.position - worldRay.origin).length(); // world distance
 
+        its.position = m_transform->apply(newIts.position); // change to world
+        its.t = (newIts.position - worldRay.origin).length(); // world distance
+        its.frame = newIts.frame;
+        its.uv = newIts.uv;
         its.instance = this;
         transformFrame(its);
         return true;
-    } else {
-        its.t = previousT;
+    } 
+    else {
+        return false;
     }
 
-    return false;
+    
 }
 
 Bounds Instance::getBoundingBox() const {
