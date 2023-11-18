@@ -14,12 +14,11 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     
     // basic idea: transformed tangent plane is still tangent, tranform (bi)tangent (two inparallel lines define a plane)
     // To transform the normal, initially transform the bitangent and tangent 
-    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent);
+    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent).normalized();
     surf.frame.tangent = m_transform->apply(surf.frame.tangent).normalized();
     // then use the cross product to get the new normal. the direction of the tangent and bitangent
     // does not necessarily perpendicular, even though the cross product result would still produces
     // the perpendicular vector i.e, normal
-    
 
     if (m_flipNormal) 
         surf.frame.normal = surf.frame.bitangent.cross(surf.frame.tangent).normalized();
@@ -40,45 +39,49 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         return false;
     }
 
+    const float previousWorldT = its.t;  
+    const Point previousWorldPos = its.position;
+
     // hints:
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
 
     // Transform the ray from world to local
-    Ray localRay = m_transform->inverse(worldRay); // to local
+    Ray localRay = m_transform->inverse(worldRay).normalized(); // to local
 
     // This part acquired by few iterations, the idea was
     // the distance (its.t) will be the same regardless the local or global positioning
     // because it basically the distance between the ray origin to its intersection point
     // in here we assume that the intersection still in global coordinates, thus, 
     // getting the world position
-    // its.position = worldRay(its.t);
+    its.position = worldRay(its.t);
     // then transform it back to the local coordinate
-    Intersection newIts = its;
-    newIts.position = m_transform->inverse(newIts.position);
+    its.position = m_transform->inverse(its.position);
     // and acquire updated distance in the local coordinate
-    newIts.t = (newIts.position - localRay.origin).length(); 
+    float new_t = (its.position - localRay.origin).length(); 
+    if (its.t <= new_t){
+        its.t = new_t;
+    }
 
-    if (m_shape->intersect(localRay, newIts, rng)) {
+    if (m_shape->intersect(localRay, its, rng)) {
         // hint: how does its.t need to change?
         // if intersected, it means that all the initial intersected points (from sphere.cpp)
         // will be scaled down to some scale. without re-calculating the ray intersection, 
         // all the points can be re-mapped to its inverse. 
         // the distance (its.t) can also acquired from this calculation
 
-        its.position = m_transform->apply(newIts.position); // change to world
-        its.t = (newIts.position - worldRay.origin).length(); // world distance
-        its.frame = newIts.frame;
-        its.uv = newIts.uv;
+        // its.position = localRay(its.t);
+        its.position = m_transform->apply(its.position); // change to world
+        its.t = (its.position - worldRay.origin).length(); // world distance
+
         its.instance = this;
         transformFrame(its);
         return true;
-    } 
-    else {
+    } else {
+        its.t = previousWorldT;
+        its.position = previousWorldPos;
         return false;
     }
-
-    
 }
 
 Bounds Instance::getBoundingBox() const {
