@@ -34,9 +34,6 @@ protected:
         return int(m_triangles.size());
     }
 
-    // a flag for primitiveIndex to indicate whether 
-    // const int notHIT = -1;
-
     bool intersect(int primitiveIndex, const Ray &ray, Intersection &its, Sampler &rng) const override {
         // NOT_IMPLEMENTED
 
@@ -101,7 +98,7 @@ protected:
 
             Vector normal;
             normal = edge1.cross(edge2);
-            its.pdf = 1.0/abs(normal.length()); //area is the length of normal vector  
+
             //smooth normal 
             if(m_smoothNormals){
                 normal = m_vertices[triangle[0]].interpolate(Vector2(u,v), m_vertices[triangle[0]], m_vertices[triangle[1]], m_vertices[triangle[2]]).normal;
