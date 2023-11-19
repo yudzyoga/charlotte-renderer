@@ -12,7 +12,7 @@ public:
     }
 
     bool intersect(const Ray &ray, Intersection &its, Sampler &rng) const override {
-        // Begin sphere calculation.
+        // Begin sphere calculation. 
         // the sphere equation are given by || O + t*D - C ||^2 = r^2
         // O -> origin of the ray
         // t -> ray distance
