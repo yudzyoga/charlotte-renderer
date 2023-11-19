@@ -12,18 +12,21 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     // * make sure that the frame is orthonormal (you are free to change the bitangent for this, but keep
     //   the direction of the transformed tangent the same)
     
-    // basic idea: transformed tangent plane is still tangent, tranform (bi)tangent (two inparallel lines define a plane)
-    // To transform the normal, initially transform the bitangent and tangent 
-    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent).normalized();
+    // basic idea: transformed tangent plane is still tangent(normal not normal), so just tranform (bi)tangent (two inparallel lines define a plane)
+    // steps1: transform both (bi)tangents (form a new tangent plane after transforming)
+    // step2:  compute normal based on new tangent plane
+    // step3:  to build orthogonal basis, recompute bitangent based on tangent and normal
+    surf.frame.bitangent = m_transform->apply(surf.frame.bitangent);
     surf.frame.tangent = m_transform->apply(surf.frame.tangent).normalized();
-    // then use the cross product to get the new normal. the direction of the tangent and bitangent
-    // does not necessarily perpendicular, even though the cross product result would still produces
-    // the perpendicular vector i.e, normal
-    if (m_flipNormal) 
+
+    if (m_flipNormal) {
+        //clockwise
         surf.frame.normal = surf.frame.bitangent.cross(surf.frame.tangent).normalized();
-    else 
+    }  
+    else {
+        //anticlockwise
         surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent).normalized();
-    // redefine bitangent to make sure frame is consists of three orthonormal basis
+    }
     surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent).normalized();
 }
 
@@ -38,49 +41,33 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         return false;
     }
 
-    // make the const variables so they would not change. They are the baseline distance and position in world coords.
-    const float previousWorldT = its.t;  
-    const Point previousWorldPos = its.position;
-
     // hints:
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
 
-    // Transform the ray from world to local
-    Ray localRay = m_transform->inverse(worldRay).normalized(); // to local
-
-    // This part acquired by few iterations, the idea was
-    // the distance (its.t) will be the same regardless the local or global positioning
-    // because it basically the distance between the ray origin to its intersection point
-    // in here we assume that the intersection still in global coordinates, thus, 
-    // getting the world position
-
-
-    // Transform the position from the world to local coordinates, then update the distance (its.t)
-    // based on which values are higher. Since "its" variable stores the world coordinate data,
-    // Our understanding in this part is related to the precision error in which the "nose" part in
-    // the snowman would disappear and did not pass the test. Hence we ensure to take the farthest distance
-    // in the local coordinate
-    its.position = m_transform->inverse(its.position);
-    float local_t = (its.position - localRay.origin).length(); 
-    if (its.t <= local_t) its.t = local_t;
-
-    if (m_shape->intersect(localRay, its, rng)) {
+    // step1: Transform world ray into local ray
+    // step2: Duplicate its and get local intersect position
+    // step3: Set local intersect position to infinity so that 
+    // we are not ignoring potential hitting candidate
+    Ray localRay = m_transform->inverse(worldRay); // to local
+    Intersection localIts = its;
+    localIts.position = m_transform->inverse(localIts.position);
+    localIts.t = INFINITY;
+    
+    // step4: check and update if candidate exists
+    bool isIts = m_shape->intersect(localRay, localIts, rng);
+    // step5: Transform the positon and t from local to world coord
+    localIts.position = m_transform->apply(localIts.position); 
+    localIts.t = (localIts.position - worldRay.origin).length(); 
+    // step6: compare candidate with our original its (then update or do nothing)
+    if (isIts && localIts.t<its.t) {
         // hint: how does its.t need to change?
-        // if intersected, it means that all the initial intersected points (from sphere.cpp)
-        // will be scaled down to some scale. without re-calculating the ray intersection, 
-        // all the points can be re-mapped to its world coordinate. 
-        // the distance (its.t) and position (its.position) can be acquired from this calculation
-        its.position = m_transform->apply(its.position); // change to world coordinates
-        its.t = (its.position - worldRay.origin).length(); // world distance
 
+        its = localIts;
         its.instance = this;
-        transformFrame(its);
+        transformFrame(its); //transform the surfaceevent
         return true;
     } else {
-        // if not intersected, replace the values using previously saved value of distance and position
-        its.t = previousWorldT;
-        its.position = previousWorldPos;
         return false;
     }
 }
