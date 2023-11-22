@@ -49,7 +49,7 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
     // step2: Duplicate its and get local intersect position
     // step3: Set local intersect position to infinity so that 
     // we are not ignoring potential hitting candidate
-    Ray localRay = m_transform->inverse(worldRay); // to local
+    Ray localRay = m_transform->inverse(worldRay).normalized(); // to local
     Intersection localIts = its;
     localIts.position = m_transform->inverse(localIts.position);
     localIts.t = INFINITY;

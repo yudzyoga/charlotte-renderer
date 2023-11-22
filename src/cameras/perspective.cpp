@@ -50,7 +50,7 @@ public:
         Step 2:
             transform ray to the world coordinate system
         */ 
-        Ray globalRay = m_transform -> apply(localRay);
+        Ray globalRay = m_transform -> apply(localRay).normalized();
 
         return lightwave::CameraSample{.ray = globalRay, 
                                         .weight = Color(1.0f)};
