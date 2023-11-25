@@ -127,11 +127,9 @@ protected:
     }
 
     Point getCentroid(int primitiveIndex) const override {
-        Vector3i triangle;
+        Bounds bbox = getBoundingBox(primitiveIndex);
 
-        // choose an arbituary point in the hitted triangle 
-        triangle = m_triangles[primitiveIndex];
-        return m_vertices[triangle.x()].interpolate(Vector2(0.25,0.5), m_vertices[triangle.x()], m_vertices[triangle.y()], m_vertices[triangle.z()]).position;
+        return bbox.center();
     }
 
 public:
