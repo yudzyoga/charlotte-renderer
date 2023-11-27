@@ -197,6 +197,8 @@ class AccelerationStructure : public Shape {
         
         // calculate the bin scale
         int primitiveCount = numberOfPrimitives();
+        const NodeIndex firstPrimitiveIdx = node.firstPrimitiveIndex();
+        const NodeIndex lastPrimitiveIdx = node.lastPrimitiveIndex();
         Point beginPt = node.aabb.min();
         Point endPt = node.aabb.max();
         volatile float distance = (endPt - beginPt)[splitAxis];
@@ -241,20 +243,49 @@ class AccelerationStructure : public Shape {
         }
 
         // re-arrange the primitive indices using quicksort algorithm
-        NodeIndex rIdx = node.firstPrimitiveIndex();
-        NodeIndex lIdx = node.lastPrimitiveIndex();
-        while (rIdx <= lIdx) {
-            if (getCentroid(m_primitiveIndices[rIdx])[splitAxis] <= splitPos) {
-                rIdx++;
-            } else if (getCentroid(m_primitiveIndices[lIdx])[splitAxis] >= splitPos) {
-                lIdx--;
-            } else{
-                std::swap(m_primitiveIndices[rIdx],
-                          m_primitiveIndices[lIdx]);
-            }
-        }
+        
 
-        return rIdx;
+        // NodeIndex rIdx = firstPrimitiveIdx;
+        // NodeIndex lIdx = node.lastPrimitiveIndex();
+        // // while (rIdx < lIdx) {
+        // //     assert(rIdx < numberOfPrimitives());
+        // //     assert(rIdx >= 0);
+        // //     assert(lIdx >= 0);
+        // //     assert(lIdx < numberOfPrimitives());
+        // //     if (getCentroid(m_primitiveIndices[rIdx])[splitAxis] <= splitPos) {
+        // //         rIdx++;
+        // //     } else if (getCentroid(m_primitiveIndices[lIdx])[splitAxis] >= splitPos) {
+        // //         lIdx--;
+        // //     } else{
+        // //         std::swap(m_primitiveIndices[rIdx],
+        // //                   m_primitiveIndices[lIdx]);
+        // //     }
+        // // }
+
+        // while (rIdx < lIdx) {
+        //         if (getCentroid(
+        //                 m_primitiveIndices[rIdx])[splitAxis] <
+        //             splitPos) {
+        //             rIdx++;
+        //         } else {
+        //             std::swap(m_primitiveIndices[rIdx],
+        //                       m_primitiveIndices[lIdx--]);
+        //         }
+        //     }
+
+        // partition algorithm (you might remember this from quicksort)
+        NodeIndex firstRightIndex = firstPrimitiveIdx;
+        NodeIndex lastLeftIndex = lastPrimitiveIdx;
+        while (firstRightIndex < lastLeftIndex) {
+            if (getCentroid(m_primitiveIndices[firstRightIndex])[splitAxis] < splitPos) {
+                    firstRightIndex++;
+                } else {
+                    std::swap(m_primitiveIndices[firstRightIndex],
+                              m_primitiveIndices[lastLeftIndex--]);
+                }
+            }
+
+        return firstRightIndex;
     }
 
     /// @brief Attempts to subdivide a given BVH node.
@@ -269,7 +300,7 @@ class AccelerationStructure : public Shape {
         const NodeIndex firstPrimitive = parent.firstPrimitiveIndex();
 
         // set to true when implementing binning
-        static constexpr bool UseSAH = true;
+        static constexpr bool UseSAH = false;
 
         // the point at which to split (note that primitives must be re-ordered
         // so that all children of the left node will have a smaller index than
