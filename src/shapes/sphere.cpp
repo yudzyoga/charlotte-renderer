@@ -19,6 +19,7 @@ public:
         // C -> center of the sphere
         // r -> radius of the sphere
         Vector ray_origin_to_sphere_center = center - ray.origin; 
+        if (abs(ray_origin_to_sphere_center.length()-1)<Epsilon) return false;
         float A = ray.direction.dot(ray.direction);
         float B = ray.direction.dot(ray_origin_to_sphere_center);
         float C = ray_origin_to_sphere_center.dot(ray_origin_to_sphere_center) - (radius * radius);

@@ -15,34 +15,25 @@ public:
      * 
      */
     Color Li(const Ray &ray, Sampler &rng) override {
-        Color weight = Color(1.f);
-        Color color ;
         // step1: check whether the primary ray has an intersection with objects
-        if (m_scene->intersect(ray,INFINITY,rng)) {
+        Intersection its = m_scene->intersect(ray, rng);
+        if (its) {
             // step2: if yes, generate a secondary ray and check whether it has an intersection with objects
-            Intersection its = m_scene->intersect(ray, rng);
+            if(its.instance->emission()) return its.evaluateEmission();//return black if it has no emission property
+            
             auto sample_result = its.sampleBsdf(rng);
             Ray secondaryRay = Ray(its.position,sample_result.wi).normalized();
+            Intersection secondIts = m_scene->intersect(secondaryRay,rng);
+            Color weight = sample_result.weight;
 
-            // step4: generate secondary ray to check whether it hits the light source
-            if(m_scene->intersect(secondaryRay,INFINITY,rng)){
-            // hidden by other objects， somehow I don't know why not return black(shadow), but then most of the model will be black them
-            // step3: update the remain energy (basically the color)
-
-                return sample_result.weight;
-            }
-            else {
-            // not hidden by other objects, hit the background, return the darkened color
-                weight = sample_result.weight;
-
-                color = m_scene->evaluateBackground(secondaryRay.direction).value;
-
-                // std::cout<<color<<std::endl;
-                return weight*m_scene->evaluateBackground(ray.direction).value;
-            }
+            if(secondIts) {
+                if (secondIts.instance->emission()) return weight*secondIts.evaluateEmission();
+                else return Color(0.f);
+            }   
+            else // hitted once, then escape the scene
+                return weight*m_scene->evaluateBackground(secondaryRay.direction).value;
         }
-        // get lightened by envlight 
-        // else return Color(1.f);
+        // escape the scene
         else return m_scene->evaluateBackground(ray.direction).value; 
     }
 
