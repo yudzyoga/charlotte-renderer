@@ -11,7 +11,11 @@ public:
     }
 
     EmissionEval evaluate(const Point2 &uv, const Vector &wo) const override {
-        NOT_IMPLEMENTED
+        Color emission = m_emission->evaluate(uv);
+        float weight = abs(wo[2]);
+        return EmissionEval{
+            .value = emission*weight
+        };
     }
 
     std::string toString() const override {

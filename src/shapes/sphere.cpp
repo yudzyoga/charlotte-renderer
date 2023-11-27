@@ -58,11 +58,14 @@ public:
         // Calculate normal, and store variables
         its.pdf = 0.f;
         its.t = distance;
+        its.uv.x() = (its.position.x() + 1.0) / 2;
+        its.uv.y() = (its.position.y() + 1.0) / 2;
         its.position = ray(distance);
         its.frame.normal = (its.position - center).normalized();
         its.frame = Frame(its.frame.normal);
-        its.uv.x() = (its.position.x() + 1.0) / 2;
-        its.uv.y() = (its.position.y() + 1.0) / 2;
+        its.wo = (ray.origin-its.position).normalized();
+
+        // assert(its.frame.normal.dot(its.wo) >= 0);
         return true;
     }
     Bounds getBoundingBox() const override {

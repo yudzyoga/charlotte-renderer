@@ -22,9 +22,27 @@ public:
         // coordinates }
         // * find the corresponding pixel coordinate for the given local
         // direction
-        return {
-            .value = m_texture->evaluate(warped),
+        // if(m_transform){
+        //     warped = m_transform->inverse(direction).normalized().xy();
+            
+        // }
+        // else{
+        //     warped = direction;
+        // }
+        // assert(m_transform);
+        if (!m_transform) {
+            return{
+                .value = m_texture->evaluate(warped)
+            };
+        }
+        else {
+            Vector dirTR = m_transform->inverse(direction).normalized();
+            warped = Vector2(dirTR.x(), dirTR.y());
+            return {
+            .value = m_texture->evaluate(warped)
         };
+        }
+
     }
 
     DirectLightSample sampleDirect(const Point &origin,
