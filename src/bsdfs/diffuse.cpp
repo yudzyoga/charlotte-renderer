@@ -14,6 +14,7 @@ public:
                       Sampler &rng) const override {
         // the weigth would be canceled out to 1 if using cosineHemisphere
         Vector wi= squareToCosineHemisphere(rng.next2D()).normalized();
+        if(wi.z() <= 0.f) return BsdfSample::invalid();
         float weight = InvPi/cosineHemispherePdf(wi)*Frame::cosTheta(wi);//always equal to one, will doublecheck with the tutor see if we can ignore
         return BsdfSample{
             .wi=wi,
