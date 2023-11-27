@@ -20,6 +20,7 @@ public:
         // r -> radius of the sphere
         Vector ray_origin_to_sphere_center = center - ray.origin; 
         if (abs(ray_origin_to_sphere_center.length()-1)<Epsilon) return false;
+
         float A = ray.direction.dot(ray.direction);
         float B = ray.direction.dot(ray_origin_to_sphere_center);
         float C = ray_origin_to_sphere_center.dot(ray_origin_to_sphere_center) - (radius * radius);
@@ -52,7 +53,8 @@ public:
         // Skip if less than predefined Epsilon, and measure whether
         // the distance is smaller than the previous ray distance (its.t)
         // it means to take closer intersection of the ray to the sphere.
-        if (distance < Epsilon || distance > its.t){
+        // !!! mind that in the secondary intersection checking, pre and current distance would be inf
+        if (distance < Epsilon || distance > its.t || distance==Infinity){
             return false;
         }
 
@@ -62,7 +64,10 @@ public:
         its.uv.x() = (its.position.x() + 1.0) / 2;
         its.uv.y() = (its.position.y() + 1.0) / 2;
         its.position = ray(distance);
+
         its.frame.normal = (its.position - center).normalized();
+        // std::cout<<(its.position - center).length()<<std::endl;
+
         its.frame = Frame(its.frame.normal);
         its.wo = (ray.origin-its.position).normalized();
 

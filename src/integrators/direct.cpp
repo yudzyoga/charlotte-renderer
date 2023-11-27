@@ -10,26 +10,23 @@ public:
         
     }
 
-    /**
-     * @brief 
-     * 
-     */
+    /// @brief One bouce integrator
     Color Li(const Ray &ray, Sampler &rng) override {
-        // step1: check whether the primary ray has an intersection with objects
+
         Intersection its = m_scene->intersect(ray, rng);
         if (its) {
-            // step2: if yes, generate a secondary ray and check whether it has an intersection with objects
-            if(its.instance->emission()) return its.evaluateEmission();//return black if it has no emission property
+            
+            //if the hitted obj emits light, assign its color to the pixel
+            if(its.instance->emission()) 
+                return its.evaluateEmission();
             
             auto sample_result = its.sampleBsdf(rng);
             Ray secondaryRay = Ray(its.position,sample_result.wi).normalized();
             Intersection secondIts = m_scene->intersect(secondaryRay,rng);
             Color weight = sample_result.weight;
 
-            if(secondIts) {
-                if (secondIts.instance->emission()) return weight*secondIts.evaluateEmission();
-                else return Color(0.f);
-            }   
+            if(secondIts) //hit twice
+                return weight*secondIts.evaluateEmission();//evaluateEmission would return BLACK if no m_emission
             else // hitted once, then escape the scene
                 return weight*m_scene->evaluateBackground(secondaryRay.direction).value;
         }

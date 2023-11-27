@@ -11,11 +11,9 @@ public:
     }
 
     EmissionEval evaluate(const Point2 &uv, const Vector &wo) const override {
-        // 
         Color emission = m_emission->evaluate(uv);
-        float weight = abs(wo[2]);// assume in the local coordinate
         return EmissionEval{
-            .value = emission*weight
+            .value = emission
         };
     }
 

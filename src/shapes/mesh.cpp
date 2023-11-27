@@ -106,6 +106,7 @@ protected:
 
             its.frame.normal = normal.normalized();
             its.frame = Frame(its.frame.normal);
+            its.wo = (ray.origin-its.position).normalized();
 
             return true;
             
