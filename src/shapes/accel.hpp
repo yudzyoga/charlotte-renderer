@@ -183,7 +183,78 @@ class AccelerationStructure : public Shape {
     }
 
     NodeIndex binning(Node &node, int splitAxis) {
-        NOT_IMPLEMENTED
+        // put the default bins value from the assignment page 
+        const int BINS = 16;
+        // store best cost and split position along the splitAxis
+        volatile float bestCost = INFINITY;
+        volatile float splitPos = -INFINITY;
+
+        // create similar struct as in the reference page for simplification
+        struct Bin {
+            Bounds bounds;
+            int primCount=0;
+        };
+        
+        // calculate the bin scale
+        int primitiveCount = numberOfPrimitives();
+        Point beginPt = node.aabb.min();
+        Point endPt = node.aabb.max();
+        volatile float distance = (endPt - beginPt)[splitAxis];
+        volatile float scale = distance / BINS;
+
+        // Initiate bins and allocate each primitives to its respective bins
+        Bin bin[BINS];
+        for (int primIdx=0; primIdx<primitiveCount; primIdx++){
+            volatile float centroidPos = getCentroid(m_primitiveIndices[primIdx])[splitAxis];
+            int binIdx = min(BINS-1, int((centroidPos - beginPt[splitAxis]) / scale));
+            bin[binIdx].bounds.extend(getBoundingBox(m_primitiveIndices[primIdx]));
+            bin[binIdx].primCount += 1;
+        }
+
+        // loop over all bins separation
+        // store the cumulative area and cumulative count for each left and right side
+        // this will be beneficial in calculating the cost later
+        float leftCumulativeArea[BINS-1], rightCumulativeArea[BINS-1]; 
+        int leftCumulativeCount[BINS-1], rightCumulativeCount[BINS-1];
+        Bin leftSeparation, rightSeparation;
+        for (int areaIdx=0; areaIdx<(BINS-1); areaIdx++){
+            // for the left part
+            leftSeparation.primCount += bin[areaIdx].primCount;
+            leftSeparation.bounds.extend(bin[areaIdx].bounds);
+            leftCumulativeCount[areaIdx] = leftSeparation.primCount;
+            leftCumulativeArea[areaIdx] = surfaceArea(leftSeparation.bounds);
+            // and for the right part
+            rightSeparation.primCount += bin[BINS - 2 - areaIdx].primCount;
+            rightSeparation.bounds.extend(bin[BINS - 2 - areaIdx].bounds);
+            rightCumulativeCount[BINS - 2 - areaIdx] = rightSeparation.primCount;
+            rightCumulativeArea[BINS - 2 - areaIdx] = surfaceArea(rightSeparation.bounds);
+        }
+
+        // calculate the SAH (Surface Area Heuristics). Find the best splitting position
+        for (int areaIdx=0; areaIdx<(BINS-1); areaIdx++){
+            float planeCost = leftCumulativeCount[areaIdx] * leftCumulativeArea[areaIdx] + 
+                                rightCumulativeCount[areaIdx] * rightCumulativeArea[areaIdx];
+            if (planeCost < bestCost){
+                bestCost = planeCost;
+                splitPos = beginPt[splitAxis] + scale * (areaIdx + 1);
+            }
+        }
+
+        // re-arrange the primitive indices using quicksort algorithm
+        NodeIndex rIdx = node.firstPrimitiveIndex();
+        NodeIndex lIdx = node.lastPrimitiveIndex();
+        while (rIdx <= lIdx) {
+            if (getCentroid(m_primitiveIndices[rIdx])[splitAxis] <= splitPos) {
+                rIdx++;
+            } else if (getCentroid(m_primitiveIndices[lIdx])[splitAxis] >= splitPos) {
+                lIdx--;
+            } else{
+                std::swap(m_primitiveIndices[rIdx],
+                          m_primitiveIndices[lIdx]);
+            }
+        }
+
+        return rIdx;
     }
 
     /// @brief Attempts to subdivide a given BVH node.
@@ -198,7 +269,7 @@ class AccelerationStructure : public Shape {
         const NodeIndex firstPrimitive = parent.firstPrimitiveIndex();
 
         // set to true when implementing binning
-        static constexpr bool UseSAH = false;
+        static constexpr bool UseSAH = true;
 
         // the point at which to split (note that primitives must be re-ordered
         // so that all children of the left node will have a smaller index than

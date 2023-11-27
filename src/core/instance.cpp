@@ -37,8 +37,9 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         if (m_shape->intersect(localRay, its, rng)) {
             its.instance = this;
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     // hints:
@@ -68,6 +69,7 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         transformFrame(its); //transform the surfaceevent
         return true;
     } else {
+        // its.t = previousT; // we currently not changing the its.t unless needed
         return false;
     }
 }
