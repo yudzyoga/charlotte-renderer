@@ -3,6 +3,24 @@
 namespace lightwave {
 
 class Sphere : public Shape {
+    /**
+     * @brief Constructs a surface event for a given position, used by @ref intersect to populate the @ref Intersection
+     * and by @ref sampleArea to populate the @ref AreaSample .
+     * @param surf The surface event to populate with texture coordinates, shading frame and area pdf
+     * @param position The hitpoint (i.e., point in [-1,-1,0] to [+1,+1,0]), found via intersection or area sampling
+     */
+    inline void populate(SurfaceEvent &surf, const Point &position) const {
+        surf.position = position;
+
+        // use the sphere to uv equation through two implicit trigonometry parameter
+        // theta = atan2(position.x(), position.z())
+        // phi = acos(position.y())
+        surf.uv.x() = atan2(position.x(), position.z()) / (2 * Pi);
+        surf.uv.y() = acos(position.y()) / Pi;
+
+        // since we sample the area uniformly, the pdf is given by 1/surfaceArea
+        surf.pdf = 1.0f / 4;
+    }
 
 public:
     Point center = Point(0);
@@ -61,17 +79,13 @@ public:
         // Calculate normal, and store variables
         its.pdf = 0.f;
         its.t = distance;
-        its.uv.x() = (its.position.x() + 1.0) / 2;
-        its.uv.y() = (its.position.y() + 1.0) / 2;
         its.position = ray(distance);
 
         its.frame.normal = (its.position - center).normalized();
-        // std::cout<<(its.position - center).length()<<std::endl;
-
         its.frame = Frame(its.frame.normal);
         its.wo = (ray.origin-its.position).normalized();
+        populate(its, its.position);
 
-        // assert(its.frame.normal.dot(its.wo) >= 0);
         return true;
     }
     Bounds getBoundingBox() const override {
