@@ -43,17 +43,22 @@ public:
     }
 
     Point2 remapPixel(Point2 &uv, bool isClamp=true) const {
+        Point2 edgeMargin {
+            0.5f/m_image->resolution().x(),
+            0.5f/m_image->resolution().y()
+        };
+        
         // assume clamp as default
         // make sure in range
         Point2 uvOut = uv;
-        if (uv.x() < 0.f || uv.x() > 1.f || 
-            uv.y() < 0.f || uv.y() > 1.f){
+        if (uv.x() < edgeMargin.x() || uv.x() > 1.f-edgeMargin.y() || 
+            uv.y() < edgeMargin.y() || uv.y() > 1.f-edgeMargin.y()){
 
-            // if clamp
+            // if clamp, make sure to take the edge pixel by pointing into the center position
             if (isClamp) {
                 uvOut = Point2{
-                    clamp(uv.x(), 0.f, 1.f),
-                    clamp(uv.y(), 0.f, 1.f)
+                    clamp(uv.x(), edgeMargin.x(), 1.f-edgeMargin.x()),
+                    clamp(uv.y(), edgeMargin.y(), 1.f-edgeMargin.y())
                 };
             } else {
                 uvOut = Point2(uv.x() - floor(uv.x()), 
@@ -66,6 +71,7 @@ public:
     Color interpolateColor(Point2 &uv, bool isBilinearFiltering) const {
         Point2i res = m_image->resolution();
         
+        // nearest neighboor
         if (!isBilinearFiltering) {
             return Color(m_image->get(Point2i{
                         (int)floor(res.x() * uv.x()),
@@ -75,11 +81,11 @@ public:
             // not yet structured for easy access
             // -0.5f because of the origin in the top left
             // Point2 p {-0.5f + (float)(res.x()) * uv.x(), -0.5f + (float)(res.y()) * uv.y()};
-            Point2 p {-0.5f + (float)(res.x() * uv.x()), -0.5f + (float)(res.y() * uv.y())};
-
+            Point2 uv_pixel {-0.5f + (float)(res.x() * uv.x()), -0.5f + (float)(res.y() * uv.y())};
+            
             // check edge case !!!
-            Point2i floorPt {(int)floor(p.x()), (int)floor(p.y())};
-            Point2i ceilPt {(int)ceil(p.x()), (int)ceil(p.y())};
+            Point2i floorPt {(int)floor(uv_pixel.x()), (int)floor(uv_pixel.y())};
+            Point2i ceilPt {(int)ceil(uv_pixel.x()), (int)ceil(uv_pixel.y())};
             if (floorPt.x() < 0) {floorPt.x() = floorPt.x() + res.x();}
             if (floorPt.y() < 0) {floorPt.y() = floorPt.y() + res.y();}
             if (ceilPt.x() > (res.x()-1)) {ceilPt.x() = ceilPt.x() - res.x();}
@@ -96,12 +102,23 @@ public:
             Color c01 = Color(m_image->get(p01));
             Color c11 = Color(m_image->get(p11));
 
-            Color f_y1 = c00 * (p10.x() - p.x()) + c10 * (p.x() - p00.x());
-            Color f_y2 = c01 * (p11.x() - p.x()) + c11 * (p.x() - p01.x());
-            Color f_final = f_y1 * (ceilPt.y() - p.y()) + f_y2 * (p.y() - floorPt.y());
+            Color f_y1 = c00 * (1.f - (uv_pixel.x()-floor(uv_pixel.x()))) + c10 * ((uv_pixel.x()-floor(uv_pixel.x())) - 0.f);
+            Color f_y2 = c01 * (1.f - (uv_pixel.x()-floor(uv_pixel.x()))) + c11 * ((uv_pixel.x()-floor(uv_pixel.x())) - 0.f);
+            Color f_final = f_y1 * (1.f - (uv_pixel.y()-floor(uv_pixel.y()))) + f_y2 * ((uv_pixel.y()-floor(uv_pixel.y())) - 0.f);
             
             return f_final;
         }
+    }
+
+    Color BorderHandling(const Point2 &uv, bool isClamp) const {
+        Point2i res = m_image->resolution();
+
+
+
+        return Color(m_image->get(Point2i{
+                        (int)floor(res.x() * uv.x() * 0.5f),
+                        (int)floor(res.y() * uv.y() * 0.5f)
+                    }));
     }
 
     Color evaluate(const Point2 &uv) const override {
