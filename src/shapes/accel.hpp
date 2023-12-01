@@ -198,18 +198,32 @@ class AccelerationStructure : public Shape {
         // calculate the bin scale
         int primitiveCount = numberOfPrimitives();
         const NodeIndex firstPrimitiveIdx = node.firstPrimitiveIndex();
-        const NodeIndex lastPrimitiveIdx = node.lastPrimitiveIndex();
-        Point beginPt = node.aabb.min();
-        Point endPt = node.aabb.max();
-        volatile float distance = (endPt - beginPt)[splitAxis];
-        volatile float scale = distance / BINS;
+        // const NodeIndex lastPrimitiveIdx = node.lastPrimitiveIndex();
+        
+        // check if anything goes wrong
+        // assert(false);
+        // assert(firstPrimitiveIdx < numberOfPrimitives());
+        // assert(firstPrimitiveIdx >= 0);
+        // assert(lastPrimitiveIdx >= 0);
+        // assert(lastPrimitiveIdx < numberOfPrimitives());
 
+        float boundsMin = 1e30f;
+        float boundsMax = -1e30f;
+        for (int primIdx=0; primIdx<primitiveCount; primIdx++){
+            Point centroidPos = getCentroid(m_primitiveIndices[primIdx]);
+            boundsMin = min(boundsMin, centroidPos[splitAxis]);
+            boundsMax = max(boundsMax, centroidPos[splitAxis]);
+        }
+
+        float distance = (boundsMax - boundsMin);
+        float scale = distance / BINS;
+        
         // Initiate bins and allocate each primitives to its respective bins
         Bin bin[BINS];
         for (int primIdx=0; primIdx<primitiveCount; primIdx++){
-            volatile float centroidPos = getCentroid(m_primitiveIndices[primIdx])[splitAxis];
-            int binIdx = min(BINS-1, int((centroidPos - beginPt[splitAxis]) / scale));
-            bin[binIdx].bounds.extend(getBoundingBox(m_primitiveIndices[primIdx]));
+            Point centroidPos = getCentroid(m_primitiveIndices[primIdx]);
+            int binIdx = min(BINS-1, int((centroidPos[splitAxis] - boundsMin) / scale));
+            bin[binIdx].bounds.extend(centroidPos);
             bin[binIdx].primCount += 1;
         }
 
@@ -238,54 +252,62 @@ class AccelerationStructure : public Shape {
                                 rightCumulativeCount[areaIdx] * rightCumulativeArea[areaIdx];
             if (planeCost < bestCost){
                 bestCost = planeCost;
-                splitPos = beginPt[splitAxis] + scale * (areaIdx + 1);
+                splitPos = boundsMin + scale * (areaIdx + 1);
             }
         }
 
         // re-arrange the primitive indices using quicksort algorithm
         
 
-        // NodeIndex rIdx = firstPrimitiveIdx;
-        // NodeIndex lIdx = node.lastPrimitiveIndex();
-        // // while (rIdx < lIdx) {
-        // //     assert(rIdx < numberOfPrimitives());
-        // //     assert(rIdx >= 0);
-        // //     assert(lIdx >= 0);
-        // //     assert(lIdx < numberOfPrimitives());
-        // //     if (getCentroid(m_primitiveIndices[rIdx])[splitAxis] <= splitPos) {
-        // //         rIdx++;
-        // //     } else if (getCentroid(m_primitiveIndices[lIdx])[splitAxis] >= splitPos) {
-        // //         lIdx--;
-        // //     } else{
-        // //         std::swap(m_primitiveIndices[rIdx],
-        // //                   m_primitiveIndices[lIdx]);
-        // //     }
-        // // }
-
+        NodeIndex rIdx = firstPrimitiveIdx;
+        NodeIndex lIdx = node.lastPrimitiveIndex();
         // while (rIdx < lIdx) {
-        //         if (getCentroid(
-        //                 m_primitiveIndices[rIdx])[splitAxis] <
-        //             splitPos) {
-        //             rIdx++;
-        //         } else {
-        //             std::swap(m_primitiveIndices[rIdx],
-        //                       m_primitiveIndices[lIdx--]);
-        //         }
+        //     if (getCentroid(m_primitiveIndices[rIdx])[splitAxis] <= splitPos) {
+        //         rIdx++;
+        //     } else if (getCentroid(m_primitiveIndices[lIdx])[splitAxis] >= splitPos) {
+        //         lIdx--;
+        //     } else{
+        //         std::swap(m_primitiveIndices[rIdx],
+        //                   m_primitiveIndices[lIdx]);
         //     }
+        // }
 
-        // partition algorithm (you might remember this from quicksort)
-        NodeIndex firstRightIndex = firstPrimitiveIdx;
-        NodeIndex lastLeftIndex = lastPrimitiveIdx;
-        while (firstRightIndex < lastLeftIndex) {
-            if (getCentroid(m_primitiveIndices[firstRightIndex])[splitAxis] < splitPos) {
-                    firstRightIndex++;
+        while (rIdx < lIdx) {
+                if (getCentroid(
+                        m_primitiveIndices[rIdx])[splitAxis] <
+                    splitPos) {
+                    rIdx++;
                 } else {
-                    std::swap(m_primitiveIndices[firstRightIndex],
-                              m_primitiveIndices[lastLeftIndex--]);
+                    // lIdx--;
+                    std::swap(m_primitiveIndices[rIdx],
+                              m_primitiveIndices[lIdx--]);
                 }
             }
 
-        return firstRightIndex;
+        // partition algorithm (you might remember this from quicksort)
+        // NodeIndex firstRightIndex = firstPrimitiveIdx;
+        // NodeIndex lastLeftIndex = lastPrimitiveIdx;
+        // while (firstRightIndex < lastLeftIndex) {
+        //     if (getCentroid(m_primitiveIndices[firstRightIndex])[splitAxis] < splitPos) {
+        //             firstRightIndex++;
+        //         } else {
+        //             std::swap(m_primitiveIndices[firstRightIndex],
+        //                       m_primitiveIndices[lastLeftIndex--]);
+        //         }
+            // }
+
+
+        // int i = firstPrimitiveIdx;
+        // int j = i + primitiveCount - 1;
+        // while (i <= j)
+        // {
+        //     if (getCentroid(m_primitiveIndices[i])[splitAxis] < splitPos)
+        //         i++;
+        //     else
+        //         std::swap( m_primitiveIndices[i], m_primitiveIndices[j--] );
+        // }
+
+        return rIdx;
     }
 
     /// @brief Attempts to subdivide a given BVH node.
