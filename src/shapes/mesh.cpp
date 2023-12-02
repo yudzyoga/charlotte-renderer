@@ -54,7 +54,7 @@ protected:
         Vector edge1, edge2, T, pvec, qvec, D;
         float det, t, u, v, inv_det;
         Point V0;
-        static constexpr float Epsilon = 1e-6f;
+        // static constexpr float Epsilon = 1e-6f;
 
         // a shorthand for m_triangles[i]
         Vector3i triangle;
@@ -70,8 +70,8 @@ protected:
         det = pvec.dot(edge1);
 
         // if determinant is too small() almost parallel with the triangle, ignore this hit
-        // allow double-side intersection
-        if (det<Epsilon && det>-Epsilon) return false;
+        // allow double-side intersection, set it alightly smaller than Epsilon
+        if (det<1e-6 && det>-1e-6) return false;
         inv_det = 1.0 / det;
 
         T = ray.origin - V0;              
@@ -91,9 +91,6 @@ protected:
             //update its.t/uv/frame/position/pdf
             its.t = t;
             
-            // Point position = m_vertices[triangle[0]].interpolate(Vector2(u,v), m_vertices[triangle[0]], m_vertices[triangle[1]], m_vertices[triangle[2]]).position;
-            // its.uv.x() = (position.x() + 1.0) / 2;
-            // its.uv.y() = (position.y() + 1.0) / 2;
             Vertex vtx = m_vertices[triangle[0]].interpolate(Vector2(u,v), m_vertices[triangle[0]], m_vertices[triangle[1]], m_vertices[triangle[2]]);
             its.uv = vtx.texcoords;
             its.position = vtx.position;

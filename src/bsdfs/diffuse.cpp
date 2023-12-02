@@ -12,13 +12,13 @@ public:
 
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
-        // the weigth would be canceled out to 1 if using cosineHemisphere
+        // if(wo.z() <= 0.f) return BsdfSample::invalid();
         Vector wi= squareToCosineHemisphere(rng.next2D()).normalized();
-        if(wi.z() <= 0.f) return BsdfSample::invalid();
-        float weight = InvPi/cosineHemispherePdf(wi)*Frame::cosTheta(wi);//always equal to one, will doublecheck with the tutor see if we can ignore
+
+        // float weight = InvPi/cosineHemispherePdf(wi)*Frame::cosTheta(wi);//always equal to one
         return BsdfSample{
             .wi=wi,
-            .weight = m_albedo->evaluate(uv)*weight
+            .weight = m_albedo->evaluate(uv)
         };
     }
 

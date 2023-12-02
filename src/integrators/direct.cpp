@@ -19,16 +19,19 @@ public:
             //if the hitted obj emits light, assign its color to the pixel
             if(its.instance->emission()) 
                 return its.evaluateEmission();
-            
+
             auto sample_result = its.sampleBsdf(rng);
-            Ray secondaryRay = Ray(its.position,sample_result.wi).normalized();
+            Color       weight = sample_result.weight;
+            if(weight==Color(0)) 
+                return Color(0.f);
+            Ray secondaryRay   = Ray(its.position,sample_result.wi).normalized();
+            
             Intersection secondIts = m_scene->intersect(secondaryRay,rng);
-            Color weight = sample_result.weight;
 
             if(secondIts) //hit twice
-                return weight*secondIts.evaluateEmission();//evaluateEmission would return BLACK if no m_emission
+                return weight * secondIts.evaluateEmission();//evaluateEmission would return BLACK if no m_emission
             else // hitted once, then escape the scene
-                return weight*m_scene->evaluateBackground(secondaryRay.direction).value;
+                return weight * m_scene->evaluateBackground(secondaryRay.direction).value;
         }
         // escape the scene
         else return m_scene->evaluateBackground(ray.direction).value; 

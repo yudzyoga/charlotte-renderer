@@ -21,26 +21,27 @@ public:
         // * if (m_transform) { transform direction vector from world to local
         // coordinates }
         // * find the corresponding pixel coordinate for the given local
-        // direction
-        // if(m_transform){
-        //     warped = m_transform->inverse(direction).normalized().xy();
-            
-        // }
-        // else{
-        //     warped = direction;
-        // }
-        // assert(m_transform);
         if (!m_transform) {
             return{
                 .value = m_texture->evaluate(warped)
             };
         }
         else {
-            Vector dirTR = m_transform->inverse(direction).normalized();
-            warped = Vector2(dirTR.x(), dirTR.y());
+            // world to local
+            Vector localDir = m_transform->inverse(direction).normalized();
+
+            // 3D dir to spherical coord(theta, phi)
+            float phi = atan2(localDir.z(), localDir.x()); //already take care of x=0, returns the arccosine of z/x in the range -pi to pi radians
+            // assert(localDir.y() >= -1.f); //acos will be indefite, for debug
+            // assert(localDir.y() <= 1.f);   //acos will be indefite, for debug
+            float theta = acos(localDir.y()); //returns the arccosine of x in the range 0 to pi radians
+            
+            // spherical coord (theta, phi) to 2D coord
+            warped = Vector2(0.5f-Inv2Pi * phi,  InvPi * theta);
+           
             return {
             .value = m_texture->evaluate(warped)
-        };
+            };
         }
 
     }
