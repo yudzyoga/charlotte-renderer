@@ -91,17 +91,19 @@ protected:
             //update its.t/uv/frame/position/pdf
             its.t = t;
             
-            Point position = m_vertices[triangle[0]].interpolate(Vector2(u,v), m_vertices[triangle[0]], m_vertices[triangle[1]], m_vertices[triangle[2]]).position;
-            its.uv.x() = (position.x() + 1.0) / 2;
-            its.uv.y() = (position.y() + 1.0) / 2;
-            its.position = position;
+            // Point position = m_vertices[triangle[0]].interpolate(Vector2(u,v), m_vertices[triangle[0]], m_vertices[triangle[1]], m_vertices[triangle[2]]).position;
+            // its.uv.x() = (position.x() + 1.0) / 2;
+            // its.uv.y() = (position.y() + 1.0) / 2;
+            Vertex vtx = m_vertices[triangle[0]].interpolate(Vector2(u,v), m_vertices[triangle[0]], m_vertices[triangle[1]], m_vertices[triangle[2]]);
+            its.uv = vtx.texcoords;
+            its.position = vtx.position;
 
             Vector normal;
             normal = edge1.cross(edge2);
 
             //smooth normal 
             if(m_smoothNormals){
-                normal = m_vertices[triangle[0]].interpolate(Vector2(u,v), m_vertices[triangle[0]], m_vertices[triangle[1]], m_vertices[triangle[2]]).normal;
+                normal = vtx.normal;
             }
 
             its.frame.normal = normal.normalized();
