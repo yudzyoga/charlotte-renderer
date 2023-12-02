@@ -54,7 +54,7 @@ protected:
         Vector edge1, edge2, T, pvec, qvec, D;
         float det, t, u, v, inv_det;
         Point V0;
-
+        static constexpr float Epsilon = 1e-6f;
 
         // a shorthand for m_triangles[i]
         Vector3i triangle;

@@ -42,7 +42,7 @@ public:
             });
     }
 
-    Point2 remapPixel(Point2 &uv, bool isClamp=true) const {
+    Point2 remapPixel(const Point2 &uv, bool isClamp=true) const {
         Point2 edgeMargin {
             0.5f/m_image->resolution().x(),
             0.5f/m_image->resolution().y()
@@ -73,17 +73,15 @@ public:
         
         // nearest neighboor
         if (!isBilinearFiltering) {
-            return Color(m_image->get(Point2i{
-                        (int)floor(res.x() * uv.x()),
-                        (int)floor(res.y() * uv.y())
-                    }));
+            // reverse the y ratio
+            return m_image->operator()(Point2{uv.x(), 1.f-uv.y()});
         } else {
+            // bilinear method
             // not yet structured for easy access
             // -0.5f because of the origin in the top left
-            // Point2 p {-0.5f + (float)(res.x()) * uv.x(), -0.5f + (float)(res.y()) * uv.y()};
             Point2 uv_pixel {-0.5f + (float)(res.x() * uv.x()), -0.5f + (float)(res.y() * uv.y())};
             
-            // check edge case !!!
+            // Check for edge cases
             Point2i floorPt {(int)floor(uv_pixel.x()), (int)floor(uv_pixel.y())};
             Point2i ceilPt {(int)ceil(uv_pixel.x()), (int)ceil(uv_pixel.y())};
             if (floorPt.x() < 0) {floorPt.x() = floorPt.x() + res.x();}
@@ -91,54 +89,26 @@ public:
             if (ceilPt.x() > (res.x()-1)) {ceilPt.x() = ceilPt.x() - res.x();}
             if (ceilPt.y() > (res.y()-1)) {ceilPt.y() = ceilPt.y() - res.y();}
 
-            // assign points
-            Point2i p00 {floorPt.x(), floorPt.y()};
-            Point2i p10 {ceilPt.x(), floorPt.y()};
-            Point2i p01 {floorPt.x(), ceilPt.y()};
-            Point2i p11 {ceilPt.x(), ceilPt.y()};
+            // Find the colors of neighbooring pixels position, then extract colors for each position
+            // also reverse the position(s) in y
+            Color c00 = Color(m_image->get(Point2i{floorPt.x(), (res.y()-1)-floorPt.y()}));
+            Color c10 = Color(m_image->get(Point2i{ceilPt.x(),  (res.y()-1)-floorPt.y()}));
+            Color c01 = Color(m_image->get(Point2i{floorPt.x(), (res.y()-1)-ceilPt.y()}));
+            Color c11 = Color(m_image->get(Point2i{ceilPt.x(),  (res.y()-1)-ceilPt.y()}));
 
-            Color c00 = Color(m_image->get(p00));
-            Color c10 = Color(m_image->get(p10));
-            Color c01 = Color(m_image->get(p01));
-            Color c11 = Color(m_image->get(p11));
-
+            // interpolate the neighbooring pixels
             Color f_y1 = c00 * (1.f - (uv_pixel.x()-floor(uv_pixel.x()))) + c10 * ((uv_pixel.x()-floor(uv_pixel.x())) - 0.f);
             Color f_y2 = c01 * (1.f - (uv_pixel.x()-floor(uv_pixel.x()))) + c11 * ((uv_pixel.x()-floor(uv_pixel.x())) - 0.f);
             Color f_final = f_y1 * (1.f - (uv_pixel.y()-floor(uv_pixel.y()))) + f_y2 * ((uv_pixel.y()-floor(uv_pixel.y())) - 0.f);
-            
-            return f_final;
+            return f_final * m_exposure;
         }
     }
 
-    Color BorderHandling(const Point2 &uv, bool isClamp) const {
-        Point2i res = m_image->resolution();
-
-
-
-        return Color(m_image->get(Point2i{
-                        (int)floor(res.x() * uv.x() * 0.5f),
-                        (int)floor(res.y() * uv.y() * 0.5f)
-                    }));
-    }
-
     Color evaluate(const Point2 &uv) const override {
-        Point2 centerPt{0.5f};
-        const float imgRatioX = 0.5f;
-        const float imgRatioY = 0.5f;
-
-        // get min and max points   
-        Point2 minUV {centerPt.x() - 0.5f * imgRatioX, 
-                      centerPt.y() - 0.5f * imgRatioY};
-        Point2 maxUV {centerPt.x() + 0.5f * imgRatioX, 
-                      centerPt.y() + 0.5f * imgRatioY};
-        
-        float xPosRatio = ((uv.x() - minUV.x()) / imgRatioX);
-        float yPosRatio = ((uv.y() - minUV.y()) / imgRatioY);
-        Point2 uvRatio = Point2{xPosRatio, yPosRatio};
-
-        Point2 uvRemapped = remapPixel(uvRatio, m_border == BorderMode::Clamp);
+        // remap the uv
+        Point2 uvRemapped = remapPixel(uv, m_border == BorderMode::Clamp);
+        // get the pixel volor based on the interpolation
         Color pixelColor = interpolateColor(uvRemapped, m_filter == FilterMode::Bilinear);    
-
         return pixelColor;
     }
 
