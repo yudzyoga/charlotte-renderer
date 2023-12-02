@@ -201,6 +201,7 @@ class AccelerationStructure : public Shape {
         const NodeIndex firstPrimIdx = node.firstPrimitiveIndex();
         const NodeIndex lastPrimIdx = node.lastPrimitiveIndex();
         
+        // find the minimum and maximum bounds
         float boundsMin = 1e30f;
         float boundsMax = -1e30f;
         for (int primIdx=0; primIdx<primitiveCount; primIdx++){
@@ -215,6 +216,7 @@ class AccelerationStructure : public Shape {
             splitPos = boundsMin; // pick the bound
             return sortIndexes(firstPrimIdx, lastPrimIdx, splitAxis, splitPos);
         }
+        // find the scale of the bins
         float scale = (boundsMax - boundsMin) / BINS;
 
         // Initiate bins and allocate each primitives to its respective bins
@@ -259,6 +261,7 @@ class AccelerationStructure : public Shape {
         return sortIndexes(firstPrimIdx, lastPrimIdx, splitAxis, splitPos);
     }
 
+    // sort indexes based on quicksort algorithm
     NodeIndex sortIndexes(NodeIndex rIdx, NodeIndex lIdx, int axis, const float splitPos) {
         // partition algorithm (you might remember this from quicksort)
         while (rIdx <= lIdx) {
