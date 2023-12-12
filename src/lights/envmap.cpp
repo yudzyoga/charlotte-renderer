@@ -16,14 +16,14 @@ public:
     }
 
     BackgroundLightEval evaluate(const Vector &direction) const override {
-        Vector2 warped = Vector2(0, 0);
+        // Vector2 warped = ;
         // hints:
         // * if (m_transform) { transform direction vector from world to local
         // coordinates }
         // * find the corresponding pixel coordinate for the given local
         if (!m_transform) {
             return{
-                .value = m_texture->evaluate(warped)
+                .value = m_texture->evaluate(Vector2(0, 0))
             };
         }
         else {
@@ -37,10 +37,8 @@ public:
             float theta = acos(localDir.y()); //returns the arccosine of x in the range 0 to pi radians
             
             // spherical coord (theta, phi) to 2D coord
-            warped = Vector2(0.5f-Inv2Pi * phi,  InvPi * theta);
-           
             return {
-            .value = m_texture->evaluate(warped)
+            .value = m_texture->evaluate(Vector2(0.5f-Inv2Pi * phi,  InvPi * theta))
             };
         }
 
