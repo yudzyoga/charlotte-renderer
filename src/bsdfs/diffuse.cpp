@@ -12,17 +12,29 @@ public:
 
     BsdfEval evaluate(const Point2 &uv, const Vector &wo,
                       const Vector &wi) const override {
-        NOT_IMPLEMENTED
+        // compute how strongly the current hit reflects the light source
+        // if(!Frame::sameHemisphere(wi,wo)) return BsdfEval{
+        //     .value = Color(0.6f,0.3f,0.3f)
+
+        //     // .value = Color(0.f)
+        // }; 
+        if(wi.z() <= 0.f) return BsdfEval::invalid();
+       
+        return BsdfEval{
+            .value = m_albedo->evaluate(uv) * InvPi * wi.z()
+            };
+          
     }
 
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
-        // if(wo.z() <= 0.f) return BsdfSample::invalid();
+        
         Vector wi= squareToCosineHemisphere(rng.next2D()).normalized();
-
-        // float weight = InvPi/cosineHemispherePdf(wi)*Frame::cosTheta(wi);//always equal to one
+        
+        if(wi.z() <= 0.f) 
+            return BsdfSample::invalid();
         return BsdfSample{
-            .wi=wi,
+            .wi     = wi,
             .weight = m_albedo->evaluate(uv)
         };
     }
