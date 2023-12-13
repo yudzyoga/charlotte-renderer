@@ -16,7 +16,24 @@ public:
      * This will be run for each pixel of the image, potentially with multiple samples for each pixel.
      */
     Color Li(const Ray &ray, Sampler &rng) override {
-        
+        Color goal = Color(0.f);
+        float weight = 1.f;
+
+        Intersection its = m_scene->intersect(ray, rng);
+        // for(){
+        //     intersect
+        //     if(!its){color += bg * weight; break}
+        //     color += its.emission*weight
+            
+        //     if (depth > ... )break
+        //     NEE * weight
+        //     ray = sampleBDDF
+            
+            
+            
+        // }
+
+
         return Color(0.f);
     }
 

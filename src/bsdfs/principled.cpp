@@ -17,7 +17,7 @@ struct DiffuseLobe {
         if(wi.z() <= 0.f) return BsdfEval::invalid();
        
         return BsdfEval{
-            .value = color * InvPi * wi.z()
+            .value = color * InvPi * wi.z(),
             };
     }
 
@@ -32,7 +32,7 @@ struct DiffuseLobe {
             return BsdfSample::invalid();
         return BsdfSample{
             .wi     = wi,
-            .weight = color
+            .weight = color,
         };
     }
 };
@@ -74,9 +74,18 @@ struct MetallicLobe {
         // compute wi, can easily be computed by reflecting the ray around the sampled normal
         Vector wi = lightwave::reflect(wo, normal);
 
+        // microfacet normal pdf
+        float pdf = lightwave::microfacet::pdfGGXVNDF(alpha, normal, wo);
+        if (!(pdf>0)) return BsdfSample::invalid();
+        pdf *= lightwave::microfacet::detReflection(normal, wo);
+
+        // compute jacobian term
+        float G_wi = lightwave::microfacet::smithG1(alpha, normal, wi);
+        
+        Color weight = color * G_wi;
         return BsdfSample{
             .wi=wi,
-            .weight = color
+            .weight=weight
         };
     }
 };
@@ -134,7 +143,8 @@ public:
         auto comb_diff = combination.diffuse.evaluate(wo, wi);
         auto comb_mett = combination.metallic.evaluate(wo, wi);
         return {
-            .value = 0.5f * comb_diff.value + 0.5f * comb_mett.value
+            .value = combination.diffuseSelectionProb * comb_diff.value + 
+                    (1.f - combination.diffuseSelectionProb) * comb_mett.value
         };
         // hint: evaluate `combination.diffuse` and `combination.metallic` and
         // combine their results
@@ -145,11 +155,12 @@ public:
         const auto combination = combine(uv, wo);
         // hint: sample either `combination.diffuse` (probability
         // `combination.diffuseSelectionProb`) or `combination.metallic`
-        if (combination.diffuseSelectionProb > 0.5f) {
-            return combination.diffuse.sample(wo, rng);
-        } else {
-            return combination.metallic.sample(wo, rng);
-        }
+        
+        BsdfSample sample = rng.next() < combination.diffuseSelectionProb ? 
+                                combination.diffuse.sample(wo, rng) : 
+                                combination.metallic.sample(wo, rng);
+        
+        return sample;
     }
 
     std::string toString() const override {
