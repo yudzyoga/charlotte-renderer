@@ -21,7 +21,7 @@ public:
         if(wi.z() <= 0.f) return BsdfEval::invalid();
        
         return BsdfEval{
-            .value = m_albedo->evaluate(uv) * InvPi * wi.z()
+            .value = m_albedo->evaluate(uv) * InvPi * wi.z(),
             };
           
     }
@@ -35,7 +35,7 @@ public:
             return BsdfSample::invalid();
         return BsdfSample{
             .wi     = wi,
-            .weight = m_albedo->evaluate(uv)
+            .weight = m_albedo->evaluate(uv),
         };
     }
 

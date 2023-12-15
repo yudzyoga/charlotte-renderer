@@ -9,19 +9,31 @@ struct DiffuseLobe {
     Color color;
 
     BsdfEval evaluate(const Vector &wo, const Vector &wi) const {
-        NOT_IMPLEMENTED
+        // NOT_IMPLEMENTED
 
         // hints:
         // * copy your diffuse bsdf evaluate here
         // * you do not need to query a texture, the albedo is given by `color`
+        if(wi.z() <= 0.f) return BsdfEval::invalid();
+       
+        return BsdfEval{
+            .value = color * InvPi * wi.z(),
+            };
     }
 
     BsdfSample sample(const Vector &wo, Sampler &rng) const {
-        NOT_IMPLEMENTED
-
         // hints:
         // * copy your diffuse bsdf evaluate here
         // * you do not need to query a texture, the albedo is given by `color`
+
+        Vector wi= squareToCosineHemisphere(rng.next2D()).normalized();
+
+        if(wi.z() <= 0.f) 
+            return BsdfSample::invalid();
+        return BsdfSample{
+            .wi     = wi,
+            .weight = color,
+        };
     }
 };
 
@@ -30,23 +42,51 @@ struct MetallicLobe {
     Color color;
 
     BsdfEval evaluate(const Vector &wo, const Vector &wi) const {
-        NOT_IMPLEMENTED
-
         // hints:
         // * copy your roughconductor bsdf evaluate here
         // * you do not need to query textures
         //   * the reflectance is given by `color'
         //   * the variable `alpha' is already provided for you
+
+        Vector wh = (wo + wi) / (wo + wi).length();
+        float D = lightwave::microfacet::evaluateGGX(alpha, wh);
+
+        float G_wi = lightwave::microfacet::smithG1(alpha, wh, wi);
+        float G_wo = lightwave::microfacet::smithG1(alpha, wh, wo);
+        
+        float cos_theta_i = wi.y() / sqrt(pow(wi.x(), 2) + pow(wi.z(), 2));
+        float cos_theta_o = wo.y() / sqrt(pow(wo.x(), 2) + pow(wo.z(), 2));
+        
+        return {.value=color*D*G_wi*G_wo/(4*cos_theta_o*cos_theta_i)};
     }
 
     BsdfSample sample(const Vector &wo, Sampler &rng) const {
-        NOT_IMPLEMENTED
-
         // hints:
         // * copy your roughconductor bsdf sample here
         // * you do not need to query textures
         //   * the reflectance is given by `color'
         //   * the variable `alpha' is already provided for you
+
+        // NOTE: Not yet DONE!
+        // sample microfacet normal
+        Vector normal = lightwave::microfacet::sampleGGXVNDF(alpha, wo, rng.next2D());
+        
+        // compute wi, can easily be computed by reflecting the ray around the sampled normal
+        Vector wi = lightwave::reflect(wo, normal);
+
+        // microfacet normal pdf
+        float pdf = lightwave::microfacet::pdfGGXVNDF(alpha, normal, wo);
+        if (!(pdf>0)) return BsdfSample::invalid();
+        pdf *= lightwave::microfacet::detReflection(normal, wo);
+
+        // compute jacobian term
+        float G_wi = lightwave::microfacet::smithG1(alpha, normal, wi);
+        
+        Color weight = color * G_wi;
+        return BsdfSample{
+            .wi=wi,
+            .weight=weight
+        };
     }
 };
 
@@ -100,8 +140,12 @@ public:
     BsdfEval evaluate(const Point2 &uv, const Vector &wo,
                       const Vector &wi) const override {
         const auto combination = combine(uv, wo);
-        NOT_IMPLEMENTED
-
+        auto comb_diff = combination.diffuse.evaluate(wo, wi);
+        auto comb_mett = combination.metallic.evaluate(wo, wi);
+        return {
+            .value = combination.diffuseSelectionProb * comb_diff.value + 
+                    (1.f - combination.diffuseSelectionProb) * comb_mett.value
+        };
         // hint: evaluate `combination.diffuse` and `combination.metallic` and
         // combine their results
     }
@@ -109,10 +153,14 @@ public:
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
         const auto combination = combine(uv, wo);
-        NOT_IMPLEMENTED
-
         // hint: sample either `combination.diffuse` (probability
         // `combination.diffuseSelectionProb`) or `combination.metallic`
+        
+        BsdfSample sample = rng.next() < combination.diffuseSelectionProb ? 
+                                combination.diffuse.sample(wo, rng) : 
+                                combination.metallic.sample(wo, rng);
+        
+        return sample;
     }
 
     std::string toString() const override {

@@ -15,11 +15,11 @@ class Sphere : public Shape {
         // use the sphere to uv equation through two implicit trigonometry parameter
         // theta = atan2(position.x(), position.z())
         // phi = acos(position.y())
-        surf.uv.x() = atan2(position.x(), position.z()) / (2 * Pi);
-        surf.uv.y() = acos(position.y()) / Pi;
+        surf.uv.x() = atan2(position.z(), position.x()) / (2 * Pi);     // z, x
+        surf.uv.y() = asin(position.y()) / Pi;                          // asin
 
         // since we sample the area uniformly, the pdf is given by 1/surfaceArea
-        surf.pdf = 1.0f / 4;
+        // surf.pdf = 1.0f / 4;
     }
 
 public:
