@@ -83,7 +83,7 @@ public:
 
         its.frame.normal = (its.position - center).normalized();
         its.frame = Frame(its.frame.normal);
-        its.wo = (ray.origin-its.position).normalized();
+        its.wo = (its.position-ray.origin).normalized();
         populate(its, its.position);
 
         return true;
