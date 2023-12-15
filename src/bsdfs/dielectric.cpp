@@ -26,34 +26,31 @@ public:
     BsdfSample sample(const Point2 &uv, const Vector &wo,
                       Sampler &rng) const override {
         
-        if (wo.z()==0.f) return BsdfSample::invalid();
+        if (wo.z()==0.f)  return BsdfSample::invalid();
 
         float  ior        = m_ior->scalar(uv);// ior = in/ext
         float  eta        = ior;
         Vector normal     = Vector(0.f, 0.f, 1.f);
 
         if(wo.z()<0.f) { //int->ext
-               normal     = -normal;
+               normal     = - normal;
                eta        = 1.f/ior;
         }
 
         Vector reflect_wi = reflect(wo, normal).normalized();
         float  Fr         = fresnelDielectric(reflect_wi.z(),eta);
 
-        if (rng.next() < Fr) {
-            // reflect
-            return BsdfSample{
-                .wi       = reflect_wi,
-                .weight   = m_reflectance->evaluate(uv) 
-            };
+        if (rng.next() < Fr) // reflect
+                          return BsdfSample{
+                                .wi       = reflect_wi,
+                                .weight   = m_reflectance->evaluate(uv) 
+                          };
             
-        } else {
-            // refract
-            return BsdfSample{
-                .wi       = refract(wo, normal, eta).normalized(),
-                .weight   = m_transmittance->evaluate(uv) * sqr(1/eta)  
-            };
-        }
+        else // refract
+                          return BsdfSample{
+                                .wi       = refract(wo, normal, eta).normalized(),
+                                .weight   = m_transmittance->evaluate(uv) * sqr(1/eta)  
+                          };        
         
     }
 
