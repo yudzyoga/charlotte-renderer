@@ -67,9 +67,11 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         its = localIts;
         its.instance = this;
         transformFrame(its); //transform the surfaceevent
+        its.wo = (worldRay.origin-its.position).normalized();
+
         return true;
     } else {
-        // its.t = previousT; // we currently not changing the its.t unless needed
+
         return false;
     }
 }
