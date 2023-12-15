@@ -18,10 +18,10 @@ public:
 
         //     // .value = Color(0.f)
         // }; 
-        if(wi.z() <= 0.f) return BsdfEval::invalid();
+        if(Frame::cosTheta(wi) <= 0.f) return BsdfEval::invalid();
        
         return BsdfEval{
-            .value = m_albedo->evaluate(uv) * InvPi * wi.z(),
+            .value = m_albedo->evaluate(uv) * InvPi * Frame::cosTheta(wi)
             };
           
     }
@@ -31,7 +31,7 @@ public:
         
         Vector wi= squareToCosineHemisphere(rng.next2D()).normalized();
         
-        if(wi.z() <= 0.f) 
+        if(Frame::cosTheta(wi) <= 0.f) 
             return BsdfSample::invalid();
         return BsdfSample{
             .wi     = wi,
