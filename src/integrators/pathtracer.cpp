@@ -26,7 +26,6 @@ public:
         prev_le <- prev_le + prev_weight * new_le
         prev_weight <- prev_weight * new_weight
         */
-        
         Color prev_weight = Color(1.f);
         Color prev_le     = Color(0.f);
         Color new_li      = Color(0.f);
