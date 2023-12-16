@@ -14,8 +14,8 @@ struct DiffuseLobe {
         // hints:
         // * copy your diffuse bsdf evaluate here
         // * you do not need to query a texture, the albedo is given by `color`
-        if(wi.z() <= 0.f) return BsdfEval::invalid();
-       
+        if(Frame::cosTheta(wi) <= 0.f) return BsdfEval::invalid();
+
         return BsdfEval{
             .value = color * InvPi * Frame::cosTheta(wi),
             };
@@ -28,7 +28,7 @@ struct DiffuseLobe {
 
         Vector wi = squareToCosineHemisphere(rng.next2D()).normalized();
 
-        if(wi.z() <= 0.f) 
+        if(Frame::cosTheta(wi) <= 0.f) 
             return BsdfSample::invalid();
         return BsdfSample{
             .wi     = wi,
@@ -57,7 +57,7 @@ struct MetallicLobe {
         float cos_theta_i = abs(Frame::cosTheta(wi));
         float cos_theta_o = abs(Frame::cosTheta(wo));
         
-        return {.value=color*D*G_wi*G_wo/(4*cos_theta_o*cos_theta_i)};
+        return {.value=((color*D*G_wi*G_wo)/(4.f*cos_theta_o*cos_theta_i))};
     }
 
     BsdfSample sample(const Vector &wo, Sampler &rng) const {
@@ -67,7 +67,6 @@ struct MetallicLobe {
         //   * the reflectance is given by `color'
         //   * the variable `alpha' is already provided for you
 
-        // NOTE: Not yet DONE!
         // sample microfacet normal
         Vector normal = lightwave::microfacet::sampleGGXVNDF(alpha, wo, rng.next2D());
         

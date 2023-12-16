@@ -19,14 +19,20 @@ public:
 
     Color RecurseRay(const Ray &ray, Sampler &rng){
         Color light = Color(0.f);
-        // if (ray.depth >= m_depth) return m_scene->evaluateBackground(ray.direction).value; 
-        if (ray.depth >= m_depth) return Color(0.f);  //0.00215
+        // apply zeros instead of evaluating background to avoid
+        // adding some more values to the image
+        if (ray.depth >= m_depth) return m_scene->evaluateBackground(ray.direction).value; 
 
+        // check whether the ray intersect
         bool isIntersected = m_scene->intersect(ray, INFINITY, rng);
         if (!isIntersected) {
+            // if no intersection, just evaluate the background
             return m_scene->evaluateBackground(ray.direction).value; 
         } else {
+            // check intersection
             Intersection its = m_scene->intersect(ray, rng);
+
+            // check any intersection with existing light sources
             if(m_scene->hasLights()) {
                 LightSample light_sample = m_scene->sampleLight(rng);
 
@@ -49,10 +55,13 @@ public:
             Color weight = sample_result.weight;
             if(weight==Color(0)) return Color(0.f);
 
+            // generate the next ray, transmitted from the hitting surface.
+            // add the counting value of the new ray for termination
             Ray nextRay = Ray(its.position, sample_result.wi, ray.depth+1).normalized();
             
             // do repeat the ray recursively
             Color nextColor = RecurseRay(nextRay, rng);
+            // return the light and value of the next ray intersection
             return light + weight * nextColor;
         }
     }

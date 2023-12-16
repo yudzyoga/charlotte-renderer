@@ -28,8 +28,8 @@ public:
         float G_wi = lightwave::microfacet::smithG1(alpha, wh, wi);
         float G_wo = lightwave::microfacet::smithG1(alpha, wh, wo);
         
-        float cos_theta_i = abs(Frame::cosTheta(wi));//wi.y() / sqrt(pow(wi.x(), 2) + pow(wi.z(), 2));
-        float cos_theta_o = abs(Frame::cosTheta(wo));//wo.y() / sqrt(pow(wo.x(), 2) + pow(wo.z(), 2));
+        float cos_theta_i = abs(Frame::cosTheta(wi));
+        float cos_theta_o = abs(Frame::cosTheta(wo));
         
         return {.value=R*D*G_wi*G_wo/(4*cos_theta_o*cos_theta_i)};
 
