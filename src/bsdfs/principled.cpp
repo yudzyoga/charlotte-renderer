@@ -57,7 +57,7 @@ struct MetallicLobe {
         float cos_theta_i = abs(Frame::cosTheta(wi));
         float cos_theta_o = abs(Frame::cosTheta(wo));
         
-        return {.value=((color*D*G_wi*G_wo)/(4.f*cos_theta_o*cos_theta_i))};
+        return {.value=((color*D*G_wi*G_wo)/(4.f*cos_theta_o*cos_theta_i))*Frame::cosTheta(wi)};
     }
 
     BsdfSample sample(const Vector &wo, Sampler &rng) const {

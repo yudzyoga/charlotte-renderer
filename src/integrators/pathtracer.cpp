@@ -53,7 +53,7 @@ public:
 
             auto sample_result = its.sampleBsdf(rng);
             Color weight = sample_result.weight;
-            if(weight==Color(0)) return Color(0.f);
+            if(weight==Color(0)) return light;
 
             // generate the next ray, transmitted from the hitting surface.
             // add the counting value of the new ray for termination

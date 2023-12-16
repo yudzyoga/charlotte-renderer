@@ -38,7 +38,7 @@ public:
 
             auto sample_result           = its.sampleBsdf(rng);
             Color       weight           = sample_result.weight;
-            if (weight==Color(0))        return Color(0.f);
+            if (weight==Color(0))        return light;
             
             Ray secondary_Ray            = Ray(its.position,sample_result.wi).normalized();
             Intersection second_its      = m_scene->intersect(secondary_Ray,rng);
