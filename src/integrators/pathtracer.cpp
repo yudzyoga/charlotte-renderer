@@ -15,14 +15,13 @@ public:
      * @brief The job of an integrator is to return a color for a ray produced by the camera model.
      * This will be run for each pixel of the image, potentially with multiple samples for each pixel.
      */
-    
-
     Color RecurseRay(const Ray &ray, Sampler &rng){
         Color light = Color(0.f);
         // apply zeros instead of evaluating background to avoid
         // adding some more values to the image
-        if (ray.depth >= m_depth) return m_scene->evaluateBackground(ray.direction).value; 
-
+        // if (ray.depth >= m_depth) return m_scene->evaluateBackground(ray.direction).value; 
+        if (ray.depth >= m_depth) return light; 
+        
         // check whether the ray intersect
         bool isIntersected = m_scene->intersect(ray, INFINITY, rng);
         if (!isIntersected) {
@@ -61,8 +60,9 @@ public:
             
             // do repeat the ray recursively
             Color nextColor = RecurseRay(nextRay, rng);
+
             // return the light and value of the next ray intersection
-            return light + weight * nextColor;
+            return light + (weight * nextColor);
         }
     }
 
