@@ -105,6 +105,9 @@ public:
     }
 
     Color evaluate(const Point2 &uv) const override {
+        if(std::isnan(uv.x()) || std::isnan(uv.y())) {
+            return Color(0);
+        }
         // remap the uv
         Point2 uvRemapped = remapPixel(uv, m_border == BorderMode::Clamp);
         // get the pixel volor based on the interpolation

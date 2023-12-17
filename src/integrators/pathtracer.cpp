@@ -71,7 +71,7 @@ public:
     }
     
     Color Li(const Ray &ray, Sampler &rng) override {
-        bool isRecurse = true;
+        bool isRecurse = false;
         if(!m_scene->hasLights()) nee = false;
 
         if (isRecurse) {
