@@ -30,6 +30,7 @@ public:
     }
 
     bool intersect(const Ray &ray, Intersection &its, Sampler &rng) const override {
+        static constexpr float Epsilon = 1e-4f;
         // Begin sphere calculation. 
         // the sphere equation are given by || O + t*D - C ||^2 = r^2
         // O -> origin of the ray
@@ -37,7 +38,7 @@ public:
         // C -> center of the sphere
         // r -> radius of the sphere
         Vector ray_origin_to_sphere_center = center - ray.origin; 
-        if (abs(ray_origin_to_sphere_center.length()-1)<Epsilon) return false;
+        // if (abs(ray_origin_to_sphere_center.length()-1)<Epsilon) return false;
 
         float A = ray.direction.dot(ray.direction);
         float B = ray.direction.dot(ray_origin_to_sphere_center);
@@ -62,9 +63,9 @@ public:
         // t1 obviously less than t2 due to the substraction
         // if not, take t2 if its bigger than 0
         float distance ;
-        if (t1 >= 0){
+        if (t1 > Epsilon){
             distance = t1;
-        } else if (t2 >= 0){
+        } else if (t2 > Epsilon){
             distance = t2;
         }
         else return false;
