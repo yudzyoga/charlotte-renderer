@@ -78,9 +78,9 @@
   <instance>
     <bsdf type="principled">
       <texture name="baseColor" type="constant" value="0.53957,0.0060484,0.28742"/>
-      <texture name="roughness" type="constant" value="0.5"/>
-      <texture name="metallic" type="constant" value="1"/>
-      <texture name="specular" type="constant" value="0"/>
+      <texture name="roughness" type="constant" value="0"/>
+      <texture name="metallic" type="constant" value="0"/>
+      <texture name="specular" type="constant" value="1"/>
     </bsdf>
     <shape type="rectangle"/>
     <transform>
