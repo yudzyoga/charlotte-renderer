@@ -41,19 +41,7 @@ public:
 
         //
         Vector reflect_wi = reflect(wo, normal).normalized();
-        // float  Fr         = fresnelDielectric(reflect_wi.z(),eta);
-        
-
-        //another way to calculate Fr, feel free to switch between two
-        Vector refract_wi = refract(wo, normal, eta).normalized();
-        float  cosThetaI  = abs(reflect_wi.z());
-        float  cosThetaT  = abs(refract_wi.z());
-        // does not matter using ior or 1/ior, the position of costhetaT and coshtetaI is mutable since we apply sqr later
-        float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
-        float Rp = (cosThetaI - eta * cosThetaT) / (cosThetaI + eta * cosThetaT);
-        float Fr = (Rs * Rs + Rp * Rp) / 2;
-        //end of another way to calculate Fr
-        
+        float  Fr         = fresnelDielectric(reflect_wi.z(),eta);
 
         if (rng.next() < Fr) // reflect
                           return BsdfSample{
