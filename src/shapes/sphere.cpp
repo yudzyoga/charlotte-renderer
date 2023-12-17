@@ -61,12 +61,13 @@ public:
         // If t1>=0
         // t1 obviously less than t2 due to the substraction
         // if not, take t2 if its bigger than 0
-        auto distance = its.t;
+        float distance ;
         if (t1 >= 0){
             distance = t1;
         } else if (t2 >= 0){
             distance = t2;
         }
+        else return false;
 
         // Skip if less than predefined Epsilon, and measure whether
         // the distance is smaller than the previous ray distance (its.t)

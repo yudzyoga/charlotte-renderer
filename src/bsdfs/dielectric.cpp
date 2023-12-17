@@ -32,13 +32,28 @@ public:
         float  eta        = ior;
         Vector normal     = Vector(0.f, 0.f, 1.f);
 
-        if(wo.z()<0.f) { //int->ext
+        if(wo.z()<0.f) { //int->ext     
                normal     = - normal;
                eta        = 1.f/ior;
         }
+        //make sure normal and wo are in the same hemisphere
+        assert(Frame::sameHemisphere(normal, wo));
 
+        //
         Vector reflect_wi = reflect(wo, normal).normalized();
-        float  Fr         = fresnelDielectric(reflect_wi.z(),eta);
+        // float  Fr         = fresnelDielectric(reflect_wi.z(),eta);
+        
+
+        //another way to calculate Fr, feel free to switch between two
+        Vector refract_wi = refract(wo, normal, eta).normalized();
+        float  cosThetaI  = abs(reflect_wi.z());
+        float  cosThetaT  = abs(refract_wi.z());
+        // does not matter using ior or 1/ior, the position of costhetaT and coshtetaI is mutable since we apply sqr later
+        float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
+        float Rp = (cosThetaI - eta * cosThetaT) / (cosThetaI + eta * cosThetaT);
+        float Fr = (Rs * Rs + Rp * Rp) / 2;
+        //end of another way to calculate Fr
+        
 
         if (rng.next() < Fr) // reflect
                           return BsdfSample{
