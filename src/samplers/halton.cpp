@@ -1,35 +1,46 @@
 #include <lightwave.hpp>
+#include "pcg32.h"
 
 namespace lightwave {
 
 class Halton : public Sampler {
-    int m_seed;
-    bool useScreenResolution = true;
-    // Point2i m_screenResolution = {512, 512};
-    Point2 m_seedPixel;
+    int m_primeSeed;
+    bool useScreenOffset = true;
+    Point2 m_offsetPixel;
+    pcg32 m_pcg;
+    int m_pcgSeed = 1337;
+
 public:
     Halton(const Properties &properties) : Sampler(properties) {
-        m_seed = properties.get<int>("seed", 1337);
+        m_pcgSeed = properties.get<int>("seed", 1337);
     }
 
     void seed(int sampleIndex) override {
-        m_seed = sampleIndex;
+        m_primeSeed = sampleIndex;
+        m_pcg.seed(m_pcgSeed, sampleIndex);
         resetPrime();
     }
 
     void seed(const Point2i &pixel, int sampleIndex) override {
-        m_seed = sampleIndex;
-        m_seedPixel = {(float)pixel.x() / (float)m_screenResolution.x(), (float)pixel.y() / (float)m_screenResolution.y()};
+        m_primeSeed = sampleIndex;
         resetPrime();
+
+        // seed it, seed it. i said SEED IT!!!
+        uint64_t hash = (uint64_t(pixel.x()) << 32) ^ pixel.y();
+        m_pcg.seed(m_pcgSeed, hash);
+        m_offsetPixel = {m_pcg.nextFloat(), m_pcg.nextFloat()};        
     }
 
     float next() override {
-        return RadicalInverse(nextPrime(), m_seed);
+        return RadicalInverse(nextPrime(), m_primeSeed);
     }
 
     Point2 next2D() override {
-        if(useScreenResolution)
-            return {std::fmod(next() + m_seedPixel.x(), 1.f), std::fmod(next() + m_seedPixel.y(), 1.f)};
+        if(useScreenOffset){
+            float posX = next() + m_offsetPixel.x();
+            float posY = next() + m_offsetPixel.y();            
+            return {std::fmod(posX, 1.0f), std::fmod(posY, 1.0f)};
+        }
         else {
             return {next(), next()};
         }
@@ -58,7 +69,6 @@ private:
     }
 
     void resetPrime(){
-        // m_init = true;
         m_lastPrimeNum = 1;
         m_primeCount = 0;
     }
@@ -68,13 +78,13 @@ private:
         uint64_t reversedDigits = 0;
         while (a) {
             // Extract least significant digit from _a_ and update _reversedDigits_
-            uint64_t next = a / base;
-            uint64_t digit = a - next * base;
+            uint64_t next = int(a / base);
+            uint64_t digit = int(a - (next * base));
             reversedDigits = reversedDigits * base + digit;
             invBaseM *= invBase;
             a = next;
         }
-        return std::min(reversedDigits * invBaseM, OneMinusEpsilon);    
+        return std::max(std::min(reversedDigits * invBaseM, OneMinusEpsilon), 0.000001f);
     }
 
     int nextPrimeValue(int lastPrime){
