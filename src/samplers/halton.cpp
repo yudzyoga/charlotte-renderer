@@ -4,6 +4,7 @@ namespace lightwave {
 
 class Halton : public Sampler {
     int m_seed;
+    bool useScreenResolution = true;
     Point2i m_screenResolution = {512, 512};
     Point2 m_seedPixel;
 public:
@@ -27,7 +28,11 @@ public:
     }
 
     Point2 next2D() override {
-        return {std::fmod(next() + m_seedPixel.x(), 1.f), std::fmod(next() + m_seedPixel.y(), 1.f)};
+        if(useScreenResolution)
+            return {std::fmod(next() + m_seedPixel.x(), 1.f), std::fmod(next() + m_seedPixel.y(), 1.f)};
+        else {
+            return {next(), next()};
+        }
     }
 
     ref<Sampler> clone() const override {
