@@ -3,29 +3,23 @@
 namespace lightwave {
 
 class Halton : public Sampler {
-    int m_primeCount = 0;
-    int m_maxPrimeCount = 1000;
-    int m_lastPrimeNum = 2;
     int m_seed;
+    Point2i m_screenResolution = {512, 512};
+    Point2 m_seedPixel;
 public:
     Halton(const Properties &properties) : Sampler(properties) {
+        m_seed = properties.get<int>("seed", 1337);
     }
 
     void seed(int sampleIndex) override {
         m_seed = sampleIndex;
+        resetPrime();
     }
 
     void seed(const Point2i &pixel, int sampleIndex) override {
         m_seed = sampleIndex;
-    }
-
-    float nextPrime() {
-        m_primeCount += 1;
-        if (m_primeCount >= m_maxPrimeCount) {
-            m_lastPrimeNum = 2;
-            m_primeCount = 0;
-        }
-        return nextPrimeValue(m_lastPrimeNum);
+        m_seedPixel = {(float)pixel.x() / (float)m_screenResolution.x(), (float)pixel.y() / (float)m_screenResolution.y()};
+        resetPrime();
     }
 
     float next() override {
@@ -33,7 +27,7 @@ public:
     }
 
     Point2 next2D() override {
-        return {RadicalInverse(nextPrime(), m_seed), RadicalInverse(nextPrime(), m_seed)};
+        return {std::fmod(next() + m_seedPixel.x(), 1.f), std::fmod(next() + m_seedPixel.y(), 1.f)};
     }
 
     ref<Sampler> clone() const override {
@@ -50,6 +44,20 @@ public:
     }
 
 private:
+    float nextPrime() {
+        // if exceed the counts
+        if (m_primeCount + 1 > m_maxPrimeCount) {
+            resetPrime();
+        }
+        return nextPrimeValue(m_lastPrimeNum);
+    }
+
+    void resetPrime(){
+        // m_init = true;
+        m_lastPrimeNum = 1;
+        m_primeCount = 0;
+    }
+
     inline float RadicalInverse(int base, uint64_t a) const {
         float invBase = (float)1 / (float)base, invBaseM = 1;
         uint64_t reversedDigits = 0;
@@ -61,11 +69,11 @@ private:
             invBaseM *= invBase;
             a = next;
         }
-        return std::min(reversedDigits * invBaseM, 0.99999999f);    
+        return std::min(reversedDigits * invBaseM, OneMinusEpsilon);    
     }
 
-    int nextPrimeValue(int currentPrime){
-        int newPrime = currentPrime;
+    int nextPrimeValue(int lastPrime){
+        int newPrime = lastPrime;
         bool isPrime = true;
         while(true){
             newPrime += 1;
@@ -80,8 +88,16 @@ private:
                 break;
             }
         }
+        m_primeCount += 1;
+        m_lastPrimeNum = newPrime;
         return newPrime;
     }
+
+    int m_primeCount = 0;
+    int m_maxPrimeCount = 1000;
+    int m_lastPrimeNum = 2;
+    static constexpr float OneMinusEpsilon = 0x1.fffffep-1;
+
 };
 
 }
