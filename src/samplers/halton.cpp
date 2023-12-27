@@ -1,22 +1,8 @@
 #include <lightwave.hpp>
 
-#include <functional>
-#include "halton.h"
-
 namespace lightwave {
 
-/**
- * @brief Generates random numbers uniformely distributed in [0,1), which are all stochastically independent from another.
- * This is the simplest form of random number generation, and will be sufficient for our introduction to Computer Graphics.
- * If you want to reduce the noise in your renders, a simple way is to implement more sophisticated random numbers (e.g.,
- * jittered sampling or blue noise sampling).
- * @see Internally, this sampler uses the PCG32 library to generate random numbers.
- */
 class Halton : public Sampler {
-    enum class RandomizeStrategy { None, PermuteDigits, FastOwen, Owen };
-    // uint64_t m_seed;
-    // pcg32 m_pcg;
-    // halton m_halton;
     int m_primeCount = 0;
     int m_maxPrimeCount = 1000;
     int m_lastPrimeNum = 2;
