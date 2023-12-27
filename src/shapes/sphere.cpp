@@ -18,8 +18,12 @@ class Sphere : public Shape {
         surf.uv.x() = atan2(position.z(), position.x()) / (2 * Pi);     // z, x
         surf.uv.y() = asin(position.y()) / Pi;                          // asin
 
+        // define vector
+        surf.frame.normal = (position - center).normalized();
+        surf.frame = Frame(surf.frame.normal);
+
         // since we sample the area uniformly, the pdf is given by 1/surfaceArea
-        // surf.pdf = 1.0f / 4;
+        surf.pdf = 1.0f / (4 * Pi * pow(radius, 2));
     }
 
 public:
@@ -83,8 +87,8 @@ public:
         its.t = distance;
         its.position = ray(distance);
 
-        its.frame.normal = (its.position - center).normalized();
-        its.frame = Frame(its.frame.normal);
+        // its.frame.normal = (its.position - center).normalized();
+        // its.frame = Frame(its.frame.normal);
         populate(its, its.position);
 
         return true;
@@ -96,7 +100,21 @@ public:
         return Point(0);
     }
     AreaSample sampleArea(Sampler &rng) const override {
-        NOT_IMPLEMENTED
+        // get x first
+        float rnd_x = 2 * rng.next() - 1; //[-1, 1]
+
+        // calculate possible y value
+        float rnd_y_limit = sqrt(1 - pow(rnd_x, 2));
+        float rnd_y = (rng.next() * 2 * rnd_y_limit) - rnd_y_limit; // [-yl, yl]make sure for y to at least get max in the limit
+        
+        // calculate z
+        float rnd_z = (2 * (rng.next() > 0.5f) - 1) * sqrt(1 - (pow(rnd_x, 2) + pow(rnd_y, 2)));
+        Point position {radius * rnd_x, radius * rnd_y, radius * rnd_z};
+        
+        // declare areaSample
+        AreaSample sample;
+        populate(sample, position);
+        return sample;
     }
     std::string toString() const override {
         return "Sphere[]";
