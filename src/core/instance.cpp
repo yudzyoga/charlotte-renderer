@@ -11,14 +11,14 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     // * if m_flipNormal is true, flip the direction of the bitangent (which in effect flips the normal)
     // * make sure that the frame is orthonormal (you are free to change the bitangent for this, but keep
     //   the direction of the transformed tangent the same)
-    
+    surf.position = m_transform->apply(surf.position); 
+
     // basic idea: transformed tangent plane is still tangent(normal not normal), so just tranform (bi)tangent (two inparallel lines define a plane)
     // steps1: transform both (bi)tangents (form a new tangent plane after transforming)
     // step2:  compute normal based on new tangent plane
     // step3:  to build orthogonal basis, recompute bitangent based on tangent and normal
     surf.frame.bitangent = m_transform->apply(surf.frame.bitangent);
     surf.frame.tangent = m_transform->apply(surf.frame.tangent).normalized();
-
     if (m_flipNormal) {
         //clockwise
         surf.frame.normal = surf.frame.bitangent.cross(surf.frame.tangent).normalized();
@@ -28,6 +28,17 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
         surf.frame.normal = surf.frame.tangent.cross(surf.frame.bitangent).normalized();
     }
     surf.frame.bitangent = surf.frame.normal.cross(surf.frame.tangent).normalized();
+   
+    if (m_normal != nullptr) {
+        // [RC] evaluate normals
+        Color norm_color = m_normal->evaluate(surf.uv);
+        Vector norm_data {2*norm_color.r()-1, 2*norm_color.g()-1, 2*norm_color.b()-1};
+        Vector new_normal = norm_data.x() * surf.frame.tangent + 
+                            norm_data.y() * surf.frame.bitangent + 
+                            norm_data.z() * 5 * surf.frame.normal; 
+        surf.frame.normal = new_normal.normalized();
+        surf.frame = Frame(surf.frame.normal);
+    }
 }
 
 bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) const {
@@ -42,6 +53,7 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         }
     }
 
+    // /*
     // hints:
     // * transform the ray (do not forget to normalize!)
     // * how does its.t need to change?
@@ -52,28 +64,34 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
     // we are not ignoring potential hitting candidate
     Ray localRay = m_transform->inverse(worldRay).normalized(); // to local
     Intersection localIts = its;
-    localIts.position = m_transform->inverse(localIts.position);
+    Intersection worldIts = its;
+    localIts.position = m_transform->inverse(worldIts.position); // to local
     localIts.t = INFINITY;
     
     // step4: check and update if candidate exists
     bool isIts = m_shape->intersect(localRay, localIts, rng);
     // step5: Transform the positon and t from local to world coord
-    localIts.position = m_transform->apply(localIts.position); 
-    localIts.t = (localIts.position - worldRay.origin).length(); 
+    worldIts.position = m_transform->apply(localIts.position); 
+    worldIts.t = (worldIts.position - worldRay.origin).length(); 
     // step6: compare candidate with our original its (then update or do nothing)
-    if (isIts && localIts.t<its.t) {
+    if (isIts && worldIts.t<its.t) {
+        // [RC] add a new check for uv, to check whether it is alpha or not.
+        if (m_alpha != nullptr){
+            Color alpha_mask = m_alpha->evaluate(localIts.uv);
+            if (alpha_mask == Color(0)) return false;
+        }
         // hint: how does its.t need to change?
-
         its = localIts;
+        its.t = worldIts.t;
         its.instance = this;
         transformFrame(its); //transform the surfaceevent
         its.wo = (worldRay.origin-its.position).normalized();
-
         return true;
     } else {
-
         return false;
     }
+    // */
+
 }
 
 Bounds Instance::getBoundingBox() const {
