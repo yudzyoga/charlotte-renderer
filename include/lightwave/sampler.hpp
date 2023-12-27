@@ -22,6 +22,7 @@ class Sampler : public Object {
 protected:
     /// @brief The number of samples that should be taken per pixel.
     int m_samplesPerPixel;
+    Point2i m_screenResolution;
 
 public:
     Sampler() : m_samplesPerPixel(0) {}
@@ -53,6 +54,14 @@ public:
 
     /// @brief Returns the number of samples that should be taken per pixel. 
     int samplesPerPixel() const { return m_samplesPerPixel; }
+
+    void setScreenResolution(Point2i screenResolution) {
+        m_screenResolution = screenResolution;
+    }
+
+    Point2i getScreenResolution() {
+        return m_screenResolution;
+    }
 };
 
 }

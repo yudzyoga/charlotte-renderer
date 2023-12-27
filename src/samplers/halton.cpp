@@ -5,7 +5,7 @@ namespace lightwave {
 class Halton : public Sampler {
     int m_seed;
     bool useScreenResolution = true;
-    Point2i m_screenResolution = {512, 512};
+    // Point2i m_screenResolution = {512, 512};
     Point2 m_seedPixel;
 public:
     Halton(const Properties &properties) : Sampler(properties) {
