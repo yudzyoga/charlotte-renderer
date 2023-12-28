@@ -38,7 +38,13 @@ class Instance : public Shape {
     bool m_flipNormal;
     /// @brief Tracks whether this instance has been added to the scene, i.e., could be hit by ray tracing.
     bool m_visible;
-    
+    /// @brief The color of the feature line. Default is Color(0.f).
+    Color m_lineColor;
+    /// @brief The pixel width in object-space at a distance of 1 from the camera. Notation refers to the paper
+    float m_pWidth;
+    /// @brief Whether this instance use the linetracer.
+    bool linetracer;
+
     /// @brief Transforms the frame from object coordinates to world coordinates.
     inline void transformFrame(SurfaceEvent &surf) const;
 
@@ -49,23 +55,27 @@ public:
         m_bsdf = properties.getOptionalChild<Bsdf>();
         m_emission = properties.getOptionalChild<Emission>();
         m_transform = properties.getOptionalChild<Transform>();
-
         if (properties.has("normal")) {
             m_normal = properties.get<Texture>("normal");       
         }
-
         if (properties.has("alpha")) {
             m_alpha = properties.get<Texture>("alpha");       
-        }
-
+        }        
         m_visible = false;
+        m_lineColor = properties.get<Color>("lineColor", Color(1.f));
+        m_pWidth = properties.get<float>("pWidth", 0.025f);
         
+        linetracer = properties.get<bool>("linetracer", true);
         m_flipNormal = false;
         if (m_transform && m_transform->determinant() < 0) {
             m_flipNormal = !m_flipNormal;
         }
     }
+    Color getLineColor() const { return m_lineColor; }
 
+    float getPWidth() const { return m_pWidth; }
+
+    bool getLinetracer() const { return linetracer; }
     /// @brief Returns the material that the shape should be rendered with (can be null for non-reflecting objects).
     Bsdf *bsdf() const { return m_bsdf.get(); }
     /// @brief Returns the distribution of light the shape should emit (can be null for non-emissive objects).

@@ -1,0 +1,119 @@
+<scene id="scene">
+  <camera type="perspective">
+    <integer name="width" value="640"/>
+    <integer name="height" value="480"/>
+    <float name="fov" value="50.692"/>
+    <string name="fovAxis" value="x"/>
+    <transform>
+      <matrix value="0.68592,0.44238,-0.57776,7.6559,  0.72768,-0.417,0.54461,-6.977,  -6.836e-08,-0.79398,-0.60794,8.1428,  0,0,0,1"/>
+    </transform>
+  </camera>
+
+  <light type="area">
+    <instance>
+      <shape type="sphere"/>
+      <transform>
+        <scale value="0.1"/>
+        <translate x="1.2185" y="-3.7617" z="2.7109"/>
+      </transform>
+      <emission type="lambertian">
+        <texture name="emission" type="constant" value="500,400.3,150.46"/>
+      </emission>
+    </instance>
+  </light>
+
+  <light type="directional" direction="0,0,1" intensity="1,1,1"/>
+
+  <light type="area">
+    <instance>
+      <shape type="sphere"/>
+      <transform>
+        <scale value="0.1"/>
+        <translate x="-3.8738" y="-1.5719" z="2.7109"/>
+      </transform>
+      <emission type="lambertian">
+        <texture name="emission" type="constant" value="500,400.3,150.46"/>
+      </emission>
+    </instance>
+  </light>
+
+  <light type="area">
+    <instance>
+      <shape type="sphere"/>
+      <transform>
+        <scale value="0.1"/>
+        <translate x="1.5761" y="0.89708" z="2.7109"/>
+      </transform>
+      <emission type="lambertian">
+        <texture name="emission" type="constant" value="500,400.3,150.46"/>
+      </emission>
+    </instance>
+  </light>
+
+  <light type="point" position="1.5761, 0.89708, 2.7109" power="300,300,200" />
+  <light type="point" position="-3.8738,-1.5719,2.7109" power="400,400,300" />
+  <light type="point" position="1.2185,-3.7617, 2.7109" power="400,400,300" />
+  <light type="directional" direction="0,0,1" intensity="1,1,1"/>
+
+  <instance id="bolt">
+    <bsdf type="principled">
+      <texture name="baseColor" type="constant" value="0.8,0.8,0.8"/>
+      <texture name="roughness" type="constant" value="1"/>
+      <texture name="metallic" type="constant" value="0"/>
+      <texture name="specular" type="constant" value="0"/>
+    </bsdf>
+    <texture name="normal" type="image" filename="textures/Bolt_3.jpg"/>
+    <shape type="mesh" filename="meshes/Plane.ply"/>
+    <transform>
+      <matrix value="10.283,-10.725,0,0,  10.725,10.283,0,0,  0,0,14.858,0,  0,0,0,1"/>
+    </transform>
+  </instance>
+
+  <instance id="orangehouse">
+    <bsdf type="principled">
+      <texture name="baseColor" type="image" filename="textures/orangehouse-low_Material__3071_BaseColor.png"/>
+      <texture name="roughness" id="Image Texture_001" type="image" filename="textures/orangehouse-low_Material__3071_OcclusionRoughnessMetallic.png" linear="true"/>
+      <ref name="metallic" id="Image Texture_001"/>
+      <texture name="specular" type="constant" value="0"/>
+    </bsdf>
+    <texture name="normal" type="image" filename="textures/orangehouse-low_Material__3071_Normal.png" linear="true"/>
+    <shape type="mesh" filename="meshes/orangehouse.ply"/>
+    <transform>
+      <matrix value="1,0,0,2.4276,  0,1,0,-4.856,  0,0,1,-0.022494,  0,0,0,1"/>
+    </transform>
+  </instance>
+
+  <instance id="robot" pWidth = "0.03">
+    <bsdf type="principled">
+      <texture name="baseColor" type="image" filename="textures/robot-low_Material__5273_BaseColor.png"/>
+      <texture name="roughness" id="Image Texture_001.000" type="image" filename="textures/robot-low_Material__5273_OcclusionRoughnessMetallic.png" linear="true"/>
+      <ref name="metallic" id="Image Texture_001.000"/>
+      <texture name="specular" type="constant" value="0"/>
+    </bsdf>
+    <texture name="normal" type="image" filename="textures/robot-low_Material__5273_Normal.png" linear="true"/>
+    <shape type="mesh" filename="meshes/robot.ply"/>
+    <transform>
+      <matrix value="-1.3436e-07,1.3436e-07,-1,2.1561,  -1.3436e-07,1,1.3436e-07,-4.0531,  1,1.3436e-07,-1.3436e-07,0.0025704,  0,0,0,1"/>
+    </transform>
+  </instance>
+
+  <instance id="grass1">
+    <shape type="mesh" filename="meshes/grass1.ply"/>
+    <transform>
+      <matrix value="1,0,0,0.13921,  0,1,0,-1.981e-06,  0,0,1,-0.057766,  0,0,0,1"/>
+    </transform>
+  </instance>
+
+  <light type="envmap">
+    <texture type="constant" value="0.050876,0.050876,0.050876"/>
+    <transform>
+      <matrix value="1,0,0,0,  0,0,1,0,  0,-1,0,0,  0,0,0,1"/>
+    </transform>
+  </light>
+
+</scene>
+<integrator type="linetracer" depth="3" nee="true" mis="true">
+  <ref id="scene"/>
+  <image id="render1"/>
+  <sampler type="halton" count="64"/>
+</integrator>

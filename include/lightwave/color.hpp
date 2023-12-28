@@ -115,6 +115,9 @@ public:
     static Color black() { return Color(0); }
     /// @brief Creates white color (i.e., all components 1). 
     static Color white() { return Color(1); }
+
+    float lengthSquared() const { return r() * r() + g() * g() + b() * b(); }
+    float length() const { return sqrt(lengthSquared()); }
 };
 
 #undef BUILD

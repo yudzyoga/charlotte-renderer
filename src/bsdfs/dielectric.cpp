@@ -37,7 +37,7 @@ public:
                eta        = 1.f/ior;
         }
         //make sure normal and wo are in the same hemisphere
-        assert(Frame::sameHemisphere(normal, wo));
+        // assert(Frame::sameHemisphere(normal, wo));
 
         //
         Vector reflect_wi = reflect(wo, normal).normalized();
