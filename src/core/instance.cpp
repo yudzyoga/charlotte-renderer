@@ -11,7 +11,7 @@ void Instance::transformFrame(SurfaceEvent &surf) const {
     // * if m_flipNormal is true, flip the direction of the bitangent (which in effect flips the normal)
     // * make sure that the frame is orthonormal (you are free to change the bitangent for this, but keep
     //   the direction of the transformed tangent the same)
-    surf.position = m_transform->apply(surf.position); 
+    // surf.position = m_transform->apply(surf.position); 
 
     // basic idea: transformed tangent plane is still tangent(normal not normal), so just tranform (bi)tangent (two inparallel lines define a plane)
     // steps1: transform both (bi)tangents (form a new tangent plane after transforming)
@@ -72,7 +72,11 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
     bool isIts = m_shape->intersect(localRay, localIts, rng);
     // step5: Transform the positon and t from local to world coord
     worldIts.position = m_transform->apply(localIts.position); 
+    // assert(worldIts.position[0] != worldRay.origin[0] || worldIts.position[1] != worldRay.origin[1] || worldIts.position[2] != worldRay.origin[2]);
     worldIts.t = (worldIts.position - worldRay.origin).length(); 
+
+    if(worldIts.t<Epsilon) return false;
+
     // step6: compare candidate with our original its (then update or do nothing)
     if (isIts && worldIts.t<its.t) {
         // [RC] add a new check for uv, to check whether it is alpha or not.
@@ -83,9 +87,12 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         // hint: how does its.t need to change?
         its = localIts;
         its.t = worldIts.t;
+        its.position = worldIts.position;
+
         its.instance = this;
         transformFrame(its); //transform the surfaceevent
-        its.wo = (worldRay.origin-its.position).normalized();
+        its.wo = (worldRay.origin-worldIts.position).normalized();
+
         return true;
     } else {
         return false;
