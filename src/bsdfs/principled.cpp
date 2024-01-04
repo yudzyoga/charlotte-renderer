@@ -47,17 +47,27 @@ struct MetallicLobe {
         // * you do not need to query textures
         //   * the reflectance is given by `color'
         //   * the variable `alpha' is already provided for you
-
+        float cos_theta_o = abs(Frame::cosTheta(wo));
+        if(cos_theta_o == 0.f) return BsdfEval::invalid();
+        
         Vector wh = (wo + wi) / (wo + wi).length();
         float D = lightwave::microfacet::evaluateGGX(alpha, wh);
 
         float G_wi = lightwave::microfacet::smithG1(alpha, wh, wi);
         float G_wo = lightwave::microfacet::smithG1(alpha, wh, wo);
         
-        float cos_theta_i = abs(Frame::cosTheta(wi));
-        float cos_theta_o = abs(Frame::cosTheta(wo));
+        // float cos_theta_i = abs(Frame::cosTheta(wi));
         
-        return {.value=((color*D*G_wi*G_wo)/(4.f*cos_theta_o*cos_theta_i))*Frame::cosTheta(wi)};
+        // if(cos_theta_o == 0.f) return {.value=Color(0.f)};
+        // assert(cos_theta_o != 0.f);
+        
+        // Color value = ((color*D*G_wi*G_wo)/(4.f*cos_theta_o*cos_theta_i))*Frame::cosTheta(wi);
+        Color value = (color*D*G_wi*G_wo)/(4.f*cos_theta_o);
+        value.r() = std::max(value.r(), 0.f);
+        // value.g() = std::max(value.g(), 0.f);
+        // value.b() = std::max(value.b(), 0.f);
+        // return {.value=((color*D*G_wi*G_wo)/(4.f*cos_theta_o*cos_theta_i))*Frame::cosTheta(wi)};
+        return {.value=value};
     }
 
     BsdfSample sample(const Vector &wo, Sampler &rng) const {
@@ -94,6 +104,7 @@ class Principled : public Bsdf {
     ref<Texture> m_roughness;
     ref<Texture> m_metallic;
     ref<Texture> m_specular;
+    bool isorm;
 
     struct Combination {
         float diffuseSelectionProb;
@@ -104,8 +115,10 @@ class Principled : public Bsdf {
     Combination combine(const Point2 &uv, const Vector &wo) const {
         const auto baseColor = m_baseColor->evaluate(uv);
         const auto alpha = std::max(float(1e-3), sqr(m_roughness->scalar(uv)));
-        const auto specular = m_specular->scalar(uv);
-        const auto metallic = m_metallic->scalar(uv);
+        const auto specular = !isorm? m_specular->scalar(uv) : m_specular->scalar_g(uv);
+        const auto metallic = !isorm? m_metallic->scalar(uv) : m_metallic->scalar_b(uv);
+
+
         const auto F =
             specular * schlick((1 - metallic) * 0.08f, Frame::cosTheta(wo));
 
@@ -130,6 +143,7 @@ class Principled : public Bsdf {
 
 public:
     Principled(const Properties &properties) {
+        isorm = properties.get<bool>("isorm", false);
         m_baseColor = properties.get<Texture>("baseColor");
         m_roughness = properties.get<Texture>("roughness");
         m_metallic  = properties.get<Texture>("metallic");
@@ -141,6 +155,10 @@ public:
         const auto combination = combine(uv, wo);
         auto comb_diff = combination.diffuse.evaluate(wo, wi);
         auto comb_mett = combination.metallic.evaluate(wo, wi);
+        assert(std::isnan(comb_diff.value.r()) == false);
+        assert(std::isnan(comb_mett.value.r()) == false);
+        // assert(comb_diff.value.r() >= 0.f);
+        // assert(comb_mett.value.r() >= 0.f);
         return {
             .value = comb_diff.value + comb_mett.value
         };

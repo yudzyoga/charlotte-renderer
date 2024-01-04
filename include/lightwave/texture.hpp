@@ -30,6 +30,14 @@ public:
         // we would ideally have a separate texture interface for scalar values)
         return evaluate(uv).r();
     }
+
+    virtual float scalar_g(const Point2 &uv) const {
+        return evaluate(uv).g();
+    }
+
+    virtual float scalar_b(const Point2 &uv) const {
+        return evaluate(uv).b();
+    }
 };
 
 }
