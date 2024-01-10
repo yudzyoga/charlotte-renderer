@@ -82,7 +82,11 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
         // [RC] add a new check for uv, to check whether it is alpha or not.
         if (m_alpha != nullptr){
             Color alpha_mask = m_alpha->evaluate(localIts.uv);
-            if (alpha_mask == Color(0)) return false;
+            float a = alpha_mask.mean();
+            if (rng.next() > a) {
+                return false;
+            } 
+            // if (alpha_mask == Color(0)) return false;
         }
         // hint: how does its.t need to change?
         its = localIts;

@@ -2,21 +2,13 @@
 
 namespace lightwave {
 
-class Bloom : public Executable {
-// protected:
-    /// @brief The input image that is to be processed.
-    ref<Image> m_input;
-    /// @brief The output image that will be produced.
-    ref<Image> m_output;
-
-    // hyperparams
+class Bloom : public Postprocess {
     int width, iters;
     float limit, sigma, scale;
 
 public: 
-    Bloom(const Properties &properties) {
-        m_input = properties.get<Image>("input");
-        m_output = properties.getChild<Image>();
+    Bloom(const Properties &properties)
+    : Postprocess(properties) {
         width = properties.get<int>("width", 2);
         iters = properties.get<int>("iters", 5);
         limit = properties.get<float>("limit", 0.8f);
@@ -26,17 +18,9 @@ public:
  
     void execute() override {
         runBloom();
-        m_output->saveAt("./bloom_output.exr");
+        Streaming stream { *m_output };
+        stream.update();
     }
-
-    // float gamma = 2.2f;
-
-    // Color getPixelColor(int x, int y){
-    //     x = (int)clamp(x, 0, m_input->resolution().x()-1);
-    //     y = (int)clamp(y, 0, m_input->resolution().y()-1);
-    //     Color color = m_input->get(Point2i{x, y});
-    //     return color;
-    // }
 
     void runBloom(){
         
@@ -137,9 +121,9 @@ public:
         return;
     }   
 
-    std::string id() const {
-        return "bloom_feature";
-    }
+    // std::string id() const {
+    //     return "bloom_feature";
+    // }
 
     std::string toString() const override {
         return tfm::format("Bloom");
