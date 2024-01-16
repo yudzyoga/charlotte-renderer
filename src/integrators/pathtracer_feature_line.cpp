@@ -18,11 +18,11 @@ public:
         m_depth  = properties.get<int>("depth", 2);
         nee      = properties.get<bool>("nee", true);
 
-        w_screen   = properties.get<float>("w_screen", 0.25f);  //this, combined with the pixel width in instance, determines the line width in screen-space. Notation refers to the paper
-        beta_depth = properties.get<float>("beta", 0.75f);      //default value follow that in the paper
-        tao_albedo = properties.get<float>("tao_albedo", 0.1f); //mind that this is the square of the albedo difference, will be quite small
-        tao_normal = properties.get<float>("tao_normal", 0.2f); //range in [0,1], the smaller the more strict
-        line_samplecount = properties.get<int>("line_samplecount", 16);
+        w_screen   = properties.get<float>("wscreen", 0.15f);  //this, combined with the pixel width in instance, determines the line width in screen-space. Notation refers to the paper
+        beta_depth = properties.get<float>("beta", 2.5f);      //default value follow that in the paper
+        tao_albedo = properties.get<float>("albedo", 0.05f); //mind that this is the square of the albedo difference, will be quite small
+        tao_normal = properties.get<float>("normal", 0.5f); //range in [0,1], the smaller the more strict
+        line_samplecount = properties.get<int>("samplecount", 8);
     }
 
     /**
@@ -86,17 +86,17 @@ public:
         if (sample_its.instance->id() != target_its.instance->id())                                return true;  //check if the sample point is on the same object
         else if((sample_its.sampleBsdf(rng).weight - target_albedo).lengthSquared() > tao_albedo ) return true; //check if the sample point is on the same material/ color region, take the square as metric for saving computation cost
         else if((1.f - abs(sample_its.frame.normal.dot(target_its.frame.normal))) > tao_normal)    return true; //check if the sample point is on the same surface, take the square as metric for saving computation cost
-        else { //check if the sample point is on similar depth, equation refers to the paper
-            if (sample_its.t < target_its.t) {
-                if(abs(sample_its.t - target_its.t) > beta_depth * sample_its.t * (sample_its.position - target_its.position).length() / abs(sample_its.t * sample_its.frame.normal.dot(sample_its.wo))) return true;
-                else return false;
-            }
-            else {
-                if(abs(sample_its.t - target_its.t) > beta_depth * target_its.t * (sample_its.position - target_its.position).length() / abs(sample_its.t * target_its.frame.normal.dot(sample_its.wo))) return true;
-                else return false;
-            }
+        // else { //check if the sample point is on similar depth, equation refers to the paper
+        //     if (sample_its.t < target_its.t) {
+        //         if(abs(sample_its.t - target_its.t) > beta_depth * sample_its.t * (sample_its.position - target_its.position).length() / abs(sample_its.t * sample_its.frame.normal.dot(sample_its.wo))) return true;
+        //         else return false;
+        //     }
+        //     else {
+        //         if(abs(sample_its.t - target_its.t) > beta_depth * target_its.t * (sample_its.position - target_its.position).length() / abs(sample_its.t * target_its.frame.normal.dot(sample_its.wo))) return true;
+        //         else return false;
+        //     }
 
-        }
+        // }
         return false;
     }
 
