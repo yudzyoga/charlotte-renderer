@@ -185,6 +185,16 @@ public:
             .weight=sample.weight/probSample
         };
     }
+    
+    Color albedo(const Point2 &uv) const override {
+        // return m_baseColor->evaluate(uv);
+        if(m_baseColor != nullptr){
+            return m_baseColor->evaluate(uv);
+        } else {
+            return Color::black();
+        }
+    }
+
 
     std::string toString() const override {
         return tfm::format("Principled[\n"

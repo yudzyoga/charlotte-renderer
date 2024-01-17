@@ -121,10 +121,6 @@ public:
         return;
     }   
 
-    // std::string id() const {
-    //     return "bloom_feature";
-    // }
-
     std::string toString() const override {
         return tfm::format("Bloom");
     }

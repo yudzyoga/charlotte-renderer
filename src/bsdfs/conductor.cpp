@@ -28,6 +28,10 @@ public:
         
     }
 
+    Color albedo(const Point2 &uv) const override {
+        return Color::black();
+    }
+
     std::string toString() const override {
         return tfm::format("Conductor[\n"
                            "  reflectance = %s\n"

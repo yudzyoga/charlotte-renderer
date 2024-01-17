@@ -70,6 +70,11 @@ public:
         //   (the resulting sample weight is only a product of two factors)
     }
 
+    Color albedo(const Point2 &uv) const override {
+        return Color::black();
+    }
+
+
     std::string toString() const override {
         return tfm::format("RoughConductor[\n"
                            "  reflectance = %s,\n"

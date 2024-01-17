@@ -100,17 +100,9 @@ public:
         return Point(0);
     }
     AreaSample sampleArea(Sampler &rng) const override {
-        // get x first
-        float rnd_x = 2 * rng.next() - 1; //[-1, 1]
+        Vector uniformSphere = squareToUniformSphere(rng.next2D());
+        Point position {uniformSphere.x(), uniformSphere.y(), uniformSphere.z()};
 
-        // calculate possible y value
-        float rnd_y_limit = sqrt(1 - pow(rnd_x, 2));
-        float rnd_y = (rng.next() * 2 * rnd_y_limit) - rnd_y_limit; // [-yl, yl]make sure for y to at least get max in the limit
-        
-        // calculate z
-        float rnd_z = (2 * (rng.next() > 0.5f) - 1) * sqrt(1 - (pow(rnd_x, 2) + pow(rnd_y, 2)));
-        Point position {radius * rnd_x, radius * rnd_y, radius * rnd_z};
-        
         // declare areaSample
         AreaSample sample;
         populate(sample, position);

@@ -15,6 +15,9 @@ public:
         AreaSample sampleArea = m_instance->sampleArea(rng);
         Point lightPosition = sampleArea.position;
         Vector wi = lightPosition - origin;   //direction
+        // Bounds box = m_instance->getBoundingBox();
+        // Point boxLength = box.max() - box.min();
+        // float area = abs(boxLength.x() * boxLength.y() * boxLength.z());
 
         Color intensity = m_instance->emission()->evaluate(sampleArea.uv, wi.normalized()).value;
         return DirectLightSample{

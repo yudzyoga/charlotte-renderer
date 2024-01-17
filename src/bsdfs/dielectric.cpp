@@ -57,6 +57,11 @@ public:
         
     }
 
+    Color albedo(const Point2 &uv) const override {
+        return Color::black();
+    }
+
+
     std::string toString() const override {
         return tfm::format("Dielectric[\n"
                            "  ior           = %s,\n"
