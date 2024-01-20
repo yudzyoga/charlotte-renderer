@@ -23,8 +23,12 @@ public:
     }
 
     void runBloom(){
+        // this implementation is based on pbrt-v4 code
         
+        // initialize output image
         m_output->initialize(m_input->resolution());
+
+        // count the threshold number
         int nSurvivors = 0;
         Point2i res = m_input->resolution();
         std::unique_ptr<Color[]> thresholded(new Color[res.x() * res.y()]);
@@ -47,6 +51,7 @@ public:
             }        
         }
 
+        // if any pixel exceeds the limit, run
         if (nSurvivors == 0) {
             fprintf(stderr,
                     "imgtool: warning: no pixels were above bloom threshold %f\n",
@@ -64,7 +69,7 @@ public:
                 width);
         }
 
-
+        
         for (int i = 0; i < width; ++i) {
             float v = std::abs(float(i - radius)) / float(radius);
             wts[i] = std::exp(-sigma * v);

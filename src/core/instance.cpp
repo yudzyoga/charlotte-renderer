@@ -75,7 +75,7 @@ bool Instance::intersect(const Ray &worldRay, Intersection &its, Sampler &rng) c
     // assert(worldIts.position[0] != worldRay.origin[0] || worldIts.position[1] != worldRay.origin[1] || worldIts.position[2] != worldRay.origin[2]);
     worldIts.t = (worldIts.position - worldRay.origin).length(); 
 
-    // if(worldIts.t<Epsilon) return false;
+    if(worldIts.t<Epsilon) return false;
 
     // step6: compare candidate with our original its (then update or do nothing)
     if (isIts && worldIts.t<its.t) {

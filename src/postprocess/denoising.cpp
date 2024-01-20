@@ -1,3 +1,4 @@
+#if __has_include(<OpenImageDenoise/oidn.h>)
 #include <lightwave.hpp>
 #include <OpenImageDenoise/oidn.h>
 
@@ -71,10 +72,11 @@ public:
     }
 
     std::string toString() const override {
-        return tfm::format("Bloom");
+        return tfm::format("Denoising");
     }
 };
 
 }
 
 REGISTER_CLASS(Denoising, "postprocess", "denoising")
+#endif
