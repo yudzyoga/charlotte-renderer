@@ -18,11 +18,11 @@ public:
         m_depth  = properties.get<int>("depth", 2);
         nee      = properties.get<bool>("nee", true);
 
-        w_screen   = properties.get<float>("wscreen", 0.15f);  //this, combined with the pixel width in instance, determines the line width in screen-space. Notation refers to the paper
-        beta_depth = properties.get<float>("beta", 2.5f);      //default value follow that in the paper
-        tao_albedo = properties.get<float>("albedo", 0.05f); //mind that this is the square of the albedo difference, will be quite small
-        tao_normal = properties.get<float>("normal", 0.5f); //range in [0,1], the smaller the more strict
-        line_samplecount = properties.get<int>("samplecount", 8);
+        w_screen   = properties.get<float>("wscreen", 0.2f);  //this, combined with the pixel width in instance, determines the line width in screen-space. Notation refers to the paper
+        beta_depth = properties.get<float>("beta", 4.f);      //default value follow that in the paper
+        tao_albedo = properties.get<float>("albedo", 0.12f); //mind that this is the square of the albedo difference, will be quite small
+        tao_normal = properties.get<float>("normal", 0.47f); //range in [0,1], the smaller the more strict
+        line_samplecount = properties.get<int>("samplecount", 7);
     }
 
     /**
@@ -30,62 +30,10 @@ public:
      * This will be run for each pixel of the image, potentially with multiple samples for each pixel.
      */
 
-    Color RecurseRay(const Ray &ray, Sampler &rng){
-        Color light = Color(0.f);
-        // apply zeros instead of evaluating background to avoid
-        // adding some more values to the image
-        // if (ray.depth >= m_depth) return m_scene->evaluateBackground(ray.direction).value; 
-        if (ray.depth >= m_depth) return light; 
-        
-        // check whether the ray intersect
-        bool isIntersected = m_scene->intersect(ray, INFINITY, rng);
-        if (!isIntersected) {
-            // if no intersection, just evaluate the background
-            return m_scene->evaluateBackground(ray.direction).value; 
-        } else {
-            // check intersection
-            Intersection its = m_scene->intersect(ray, rng);
-
-            // check any intersection with existing light sources
-            if(nee && ray.depth < m_depth-1){
-                // nne is recognized as a new bounce, for last bounce, nne is not considered
-                LightSample light_sample = m_scene->sampleLight(rng);
-
-                if(!light_sample.light->canBeIntersected()) { 
-                    DirectLightSample direct_light_sample = light_sample.light->sampleDirect(its.position, rng);
-                    bool light_its = m_scene->intersect( Ray(its.position, direct_light_sample.wi).normalized(),direct_light_sample.distance,rng);
-
-                    if(!light_its)
-                    {
-                        BsdfEval bsdf_eval = its.evaluateBsdf(direct_light_sample.wi);
-                        light += direct_light_sample.weight * bsdf_eval.value / light_sample.probability;
-                    }
-                }
-            }
-
-            //if the hitted obj emits light, assign its color to the pixel
-            if(its.instance->emission()) return light + its.evaluateEmission();
-
-            auto sample_result = its.sampleBsdf(rng);
-            Color weight = sample_result.weight;
-            if(weight==Color(0)) return light;
-
-            // generate the next ray, transmitted from the hitting surface.
-            // add the counting value of the new ray for termination
-            Ray nextRay = Ray(its.position, sample_result.wi, ray.depth+1).normalized();
-            
-            // do repeat the ray recursively
-            Color nextColor = RecurseRay(nextRay, rng);
-
-            // return the light and value of the next ray intersection
-            return light + (weight * nextColor);
-        }
-    }
-    
     bool isLine_Metric(const Intersection &sample_its, const Intersection &target_its, const Color &target_albedo, Sampler &rng){
         if (sample_its.instance->id() != target_its.instance->id())                                return true;  //check if the sample point is on the same object
-        else if((sample_its.sampleBsdf(rng).weight - target_albedo).lengthSquared() > tao_albedo ) return true; //check if the sample point is on the same material/ color region, take the square as metric for saving computation cost
-        else if((1.f - abs(sample_its.frame.normal.dot(target_its.frame.normal))) > tao_normal)    return true; //check if the sample point is on the same surface, take the square as metric for saving computation cost
+        else if(target_its.instance->getAlbedo() && (sample_its.sampleBsdf(rng).weight - target_albedo).lengthSquared() > tao_albedo ) return true; //check if the sample point is on the same material/ color region, take the square as metric for saving computation cost
+        else if(target_its.instance->getNormal() && (1.f - abs(sample_its.frame.normal.dot(target_its.frame.normal))) > tao_normal)    return true; //check if the sample point is on the same surface, take the square as metric for saving computation cost
         // else { //check if the sample point is on similar depth, equation refers to the paper
         //     if (sample_its.t < target_its.t) {
         //         if(abs(sample_its.t - target_its.t) > beta_depth * sample_its.t * (sample_its.position - target_its.position).length() / abs(sample_its.t * sample_its.frame.normal.dot(sample_its.wo))) return true;
@@ -97,7 +45,7 @@ public:
         //     }
 
         // }
-        return false;
+        else return false;
     }
 
     bool isLine(const Ray &ray, const Intersection &target_its, Sampler &rng, float &prev_w_scaled){
@@ -136,13 +84,8 @@ public:
         // rng.setScreenResolution(m_scene->camera()->resolution());
         // assert(rng.getScreenResolution() == m_scene->camera()->resolution());
         
-        bool isRecurse = false;
         if(!m_scene->hasLights()) nee = false;
-
-        if (isRecurse) {
-            Color outLight = RecurseRay(ray, rng);
-            return outLight;
-        } else {
+            
             // assert(m_depth >= 2);
             // if(!m_scene->hasLights()) nee = false;
             /*
@@ -170,7 +113,7 @@ public:
                     //check if it's a feature line first
                     if(its.instance->getLinetracer()){
                         if(isLine(bounceRay,its, rng, prev_wscaled)) {
-                        assert(prev_wscaled!=0.f);  
+                        // assert(prev_wscaled!=0.f);  
                         new_li = its.instance->getLineColor() * Pi * sqr(prev_wscaled); //for compensation of the illumination
                         break;
                         }
@@ -215,7 +158,7 @@ public:
             }
             //initial values: prev_le=0, prev_weight=1, new_li=0
             return prev_le + prev_weight * new_li;
-        }
+        
     }
 
     /// @brief An optional textual representation of this class, which can be useful for debugging. 
