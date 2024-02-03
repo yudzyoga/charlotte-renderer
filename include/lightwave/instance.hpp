@@ -44,7 +44,8 @@ class Instance : public Shape {
     float m_pWidth;
     /// @brief Whether this instance use the linetracer.
     bool linetracer;
-
+    bool isAlbedo;
+    bool isNormal;
     /// @brief Transforms the frame from object coordinates to world coordinates.
     inline void transformFrame(SurfaceEvent &surf) const;
 
@@ -59,13 +60,17 @@ public:
             m_normal = properties.get<Texture>("normal");       
         }
         if (properties.has("alpha")) {
-            m_alpha = properties.get<Texture>("alpha");       
-        }        
+            m_alpha = properties.get<Texture>("alpha");     
+            linetracer = false;
+        }    
+        else linetracer = properties.get<bool>("linetracer", true);
+
         m_visible = false;
-        m_lineColor = properties.get<Color>("lineColor", Color(1.f));
-        m_pWidth = properties.get<float>("pWidth", 0.025f);
-        
-        linetracer = properties.get<bool>("linetracer", true);
+        m_lineColor = properties.get<Color>("lineColor", Color(0.f));
+        m_pWidth = properties.get<float>("pWidth", 0.014f);
+        isAlbedo = properties.get<bool>("isalbedo", true);
+        isNormal = properties.get<bool>("isnormal", true);
+
         m_flipNormal = false;
         if (m_transform && m_transform->determinant() < 0) {
             m_flipNormal = !m_flipNormal;
@@ -89,7 +94,8 @@ public:
     void markAsVisible() override {
         m_visible = true;
     }
-
+    bool getAlbedo() const { return isAlbedo; }
+    bool getNormal() const { return isNormal; }
     /// @brief Sets the parent light object that contains this instance.
     void setLight(Light *light) {
         if (m_light) {
