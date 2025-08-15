@@ -20,9 +20,9 @@ This path tracer supports the following features:
 
 <!-- --- -->
 
-## Renderer Preview
+## Renderer Result
 
-Below are previews of the rendered scenes for submission on the rendering competition:
+Below are results of the rendered scenes for submission on the rendering competition:
 
 | Rendering Result 1 (Yudz) | Rendering Result 2 (Gillian) |
 |-----------------|-----------------|
