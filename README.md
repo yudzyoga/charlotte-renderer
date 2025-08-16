@@ -28,7 +28,7 @@ Below are results of the rendered scenes for submission on the rendering competi
 |-----------------|-----------------|
 | ![Original](figures/scene_yudz.jpeg) | ![Rendered](figures/scene_gillian.jpg) |
 
-More desciption about the rendering result, features, and challenges can be found [here](YOUR_WEBSITE_LINK_HERE)
+More desciption about the rendering result, features, and challenges can be found [here](https://yudzyoga.github.io/subpages/rc-webpage/index.html)
 
 <!-- --- -->
 
